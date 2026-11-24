@@ -315,7 +315,7 @@ test('media import streams to an exclusive cache file, follows relative redirect
   });
   assert.equal(h.requests.length, 0, 'there are no background connection checks');
   const imported = await h.services.importMedia({ url: 'https://example.com/start', kind: 'image' });
-  assert.equal(imported.type, 'image'); assert.equal(imported.path, path.join(root, 'downloads', imported.name));
+  assert.equal(imported.type, 'image'); assert.equal(imported.path, await fs.realpath(path.join(root, 'downloads', imported.name)));
   assert.match(imported.name, /^[a-f\d-]{36}\.png$/); assert.match(imported.url, /^studio-media:\/\/asset\//);
   assert.equal(registered, 1); assert.deepEqual(await fs.readFile(imported.path), bytes);
   assert.deepEqual(h.requests.map(request => request.url), ['https://example.com/start', 'https://example.com/final.png']);
