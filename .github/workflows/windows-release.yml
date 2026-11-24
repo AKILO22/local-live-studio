@@ -1,0 +1,33 @@
+name: Windows release build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci
+      - name: Test, package, and create download archives
+        run: npm run release
+      - name: Retain release files
+        uses: actions/upload-artifact@v7
+        with:
+          name: local-live-studio-windows-release
+          path: dist/v*/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30

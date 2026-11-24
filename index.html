@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: studio-media:; media-src 'self' blob: studio-media:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Local LIVE Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="gifting.js" defer></script>
+    <script src="tiktok.js" defer></script>
+    <script src="renderer.js" defer></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <a class="brand" href="#" aria-label="Local LIVE Studio home"
+        ><span class="brand-mark" aria-hidden="true">◧</span
+        ><span>LOCAL <strong>LIVE STUDIO</strong></span></a
+      >
+      <span class="offline-pill" id="network-badge"
+        ><span></span><span id="network-label">Opening workspace</span></span
+      >
+      <div class="header-actions">
+        <span id="save-indicator" role="status">Opening workspace…</span
+        ><button id="import-project">Open project</button
+        ><button id="export-project">Export project</button
+        ><button
+          id="gifts-button"
+          aria-label="Open guest boxes and studio gifts"
+        >
+          🎁 Gifts</button
+        ><button id="account-button" aria-label="Sign in or manage accounts">
+          <span class="account-icon" aria-hidden="true">◉</span>
+          <span id="account-button-label">Sign in / Account</span></button
+        ><button
+          id="settings-button"
+          class="icon-button"
+          aria-label="Recording settings"
+        >
+          ⚙
+        </button>
+      </div>
+    </header>
+    <main class="studio-layout">
+      <aside class="left-sidebar">
+        <section class="panel scenes-panel">
+          <div class="section-heading">
+            <h2>Scenes</h2>
+            <button id="add-scene" class="icon-button" aria-label="Add scene">
+              ＋
+            </button>
+          </div>
+          <div
+            id="scene-list"
+            class="scene-list"
+            role="list"
+            aria-label="Scenes"
+          ></div>
+          <div class="panel-actions">
+            <button id="rename-scene">Rename</button
+            ><button id="duplicate-scene">Duplicate</button
+            ><button id="remove-scene" aria-label="Delete selected scene">
+              Delete
+            </button>
+          </div>
+        </section>
+        <section class="panel sources-panel">
+          <div class="section-heading">
+            <h2>Sources</h2>
+            <button id="add-source" class="icon-button" aria-label="Add source">
+              ＋
+            </button>
+          </div>
+          <p class="section-hint">Layers appear from front to back.</p>
+          <div
+            id="source-list"
+            class="source-list"
+            role="list"
+            aria-label="Sources"
+          ></div>
+          <button id="add-source-wide" class="add-source-wide">
+            ＋ Add source
+          </button>
+          <div class="panel-actions">
+            <button id="source-up" aria-label="Move source forward">
+              ↑ Forward</button
+            ><button id="source-down" aria-label="Move source backward">
+              ↓ Backward</button
+            ><button id="remove-source">Remove</button>
+          </div>
+        </section>
+        <div class="local-note">
+          <span aria-hidden="true">▣</span>
+          <p>
+            Created here. Saved here.<br /><small
+              >Your workspace and recordings stay on this computer.</small
+            >
+          </p>
+        </div>
+      </aside>
+      <section class="workspace">
+        <div class="workspace-toolbar">
+          <div>
+            <span class="eyebrow">PREVIEW</span>
+            <h1 id="scene-heading">Main scene</h1>
+          </div>
+          <div class="preview-tools">
+            <select id="canvas-preset" aria-label="Canvas dimensions">
+              <option value="1280x720">Landscape · 720p</option>
+              <option value="1920x1080">Landscape · 1080p</option>
+              <option value="720x1280">Portrait · 720p</option>
+              <option value="1080x1920">Portrait · 1080p</option></select
+            ><button
+              id="snapshot-button"
+              title="Save the current frame as a PNG image"
+            >
+              Save snapshot
+            </button>
+          </div>
+        </div>
+        <div class="stage" id="stage">
+          <div class="canvas-container">
+            <canvas
+              id="preview"
+              width="1280"
+              height="720"
+              aria-label="Scene preview"
+            ></canvas>
+            <div id="selection-box" class="selection-box" hidden>
+              <span></span>
+            </div>
+          </div>
+        </div>
+        <div class="preview-status">
+          <span
+            ><span class="status-dot"></span
+            ><span id="preview-mode">Ready to record</span></span
+          ><span id="format-status">1280 × 720 · 30 fps</span>
+        </div>
+        <section class="properties-bar" aria-label="Selected source properties">
+          <div class="properties-title">
+            <strong id="selected-title">Select a source</strong
+            ><small id="source-status"
+              >Adjust its position and appearance here.</small
+            >
+          </div>
+          <div id="source-properties">
+            <label>X<input id="prop-x" type="number" step="1" /></label
+            ><label>Y<input id="prop-y" type="number" step="1" /></label
+            ><label>Width<input id="prop-width" type="number" min="1" /></label
+            ><label
+              >Height<input id="prop-height" type="number" min="1" /></label
+            ><label
+              >Opacity<input
+                id="prop-opacity"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01" /></label
+            ><button id="fit-source">Fit to canvas</button
+            ><button id="edit-source">Edit</button
+            ><button id="reconnect-source" hidden>Reconnect</button>
+          </div>
+        </section>
+        <section class="audio-panel panel">
+          <div class="section-heading">
+            <h2>Audio mixer</h2>
+            <span class="section-hint">Included in recordings</span>
+          </div>
+          <div class="mixer-channels">
+            <div class="mixer-channel">
+              <div class="channel-header">
+                <strong>Microphone</strong
+                ><button id="mic-toggle" class="small-button">
+                  Enable microphone
+                </button>
+              </div>
+              <div class="meter"><span id="mic-meter"></span></div>
+              <div class="channel-controls">
+                <select id="mic-device" aria-label="Microphone device">
+                  <option value="default">Default microphone</option></select
+                ><input
+                  id="mic-volume"
+                  aria-label="Microphone volume"
+                  type="range"
+                  min="0"
+                  max="1.5"
+                  step="0.01"
+                  value="1"
+                /><span id="mic-level">100%</span>
+              </div>
+            </div>
+            <div class="mixer-channel">
+              <div class="channel-header">
+                <strong>Desktop &amp; media</strong
+                ><label class="check-label"
+                  ><input id="system-audio" type="checkbox" checked /> Capture
+                  desktop audio</label
+                >
+              </div>
+              <div class="meter"><span id="media-meter"></span></div>
+              <div class="channel-controls">
+                <span id="desktop-status"
+                  >Add a display source to capture sound.</span
+                ><input
+                  id="media-volume"
+                  aria-label="Desktop and media volume"
+                  type="range"
+                  min="0"
+                  max="1.5"
+                  step="0.01"
+                  value="1"
+                /><span id="media-level">100%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+      <aside class="right-sidebar">
+        <section class="panel session-panel">
+          <div class="section-heading">
+            <h2>Recording</h2>
+            <span id="record-state" class="state-badge">READY</span>
+          </div>
+          <div class="session-clock" id="record-clock">00:00:00</div>
+          <div class="record-details">
+            <div>
+              <small>ESTIMATED SIZE</small
+              ><strong id="record-size">0 MB</strong>
+            </div>
+            <div>
+              <small>VIDEO BITRATE</small
+              ><strong id="bitrate-label">3 Mbps</strong>
+            </div>
+          </div>
+          <button id="record-button" class="record-button">
+            <span class="record-icon"></span
+            ><span id="record-label">Start recording</span></button
+          ><button id="pause-button" class="pause-button" hidden>
+            Pause recording
+          </button>
+          <p id="record-hint">Record your scene to a local video file.</p>
+        </section>
+        <section class="panel recordings-panel">
+          <div class="section-heading">
+            <h2>Recordings</h2>
+            <button
+              id="open-recordings"
+              class="icon-button"
+              aria-label="Open recordings folder"
+            >
+              ↗
+            </button>
+          </div>
+          <div id="recordings-list"></div>
+        </section>
+        <section class="panel notes-panel">
+          <div class="section-heading"><h2>Session notes</h2></div>
+          <label class="visually-hidden" for="session-notes"
+            >Private session notes</label
+          ><textarea
+            id="session-notes"
+            placeholder="Talking points, reminders, or your next take…"
+          ></textarea
+          ><small>Saved with your project.</small>
+        </section>
+      </aside>
+    </main>
+    <footer class="app-footer">
+      <span id="app-health"
+        >Local LIVE Studio · Independent desktop application</span
+      ><span id="resource-stats">Loading system status…</span>
+    </footer>
+    <div id="toast" role="status" hidden></div>
+    <dialog id="gifting-dialog" aria-labelledby="gifting-title">
+      <div class="dialog-heading">
+        <div>
+          <span class="eyebrow">CREATOR TO GUEST</span>
+          <h2 id="gifting-title">Guest boxes &amp; gifts</h2>
+        </div>
+        <button class="icon-button" data-close-dialog aria-label="Close gifts">
+          ×
+        </button>
+      </div>
+      <div class="gifting-notice">
+        <strong>Local studio gifts</strong
+        ><span>No cash value · No TikTok coins or remote delivery</span>
+      </div>
+      <div class="gifting-layout">
+        <section aria-labelledby="guest-boxes-title">
+          <div class="gift-section-heading">
+            <h3 id="guest-boxes-title">Your guest boxes</h3>
+            <span id="gift-guest-count">0 / 9</span>
+          </div>
+          <p>
+            Add guest names manually, then select a box to choose who receives a
+            studio gift.
+          </p>
+          <div
+            id="gift-guest-grid"
+            class="gift-guest-grid"
+            role="group"
+            aria-label="Guest boxes"
+          ></div>
+          <form id="gift-guest-form" class="gift-guest-form">
+            <label
+              >Guest name<input
+                id="gift-guest-name"
+                maxlength="60"
+                required
+                placeholder="Name or @handle"
+            /></label>
+            <label
+              >Box<select
+                id="gift-guest-seat"
+                aria-label="Guest box number"
+              ></select
+            ></label>
+            <button id="gift-add-guest" type="submit">Add guest</button>
+          </form>
+          <div class="gift-roster-actions">
+            <button id="gift-add-board" class="primary">
+              Add boxes to scene</button
+            ><button id="gift-remove-guest" disabled>
+              Remove selected guest
+            </button>
+          </div>
+          <p class="gift-small-note">
+            Boxes use local name cards. Live guest video and remote viewer
+            connections are not connected.
+          </p>
+        </section>
+        <section
+          class="gift-picker-section"
+          aria-labelledby="gift-picker-title"
+        >
+          <div class="gift-section-heading">
+            <h3 id="gift-picker-title">Give a little appreciation</h3>
+            <span id="gift-total">0 gifts</span>
+          </div>
+          <p id="gift-recipient">Select a guest box to get started.</p>
+          <div
+            id="gift-catalog"
+            class="gift-catalog"
+            role="group"
+            aria-label="Studio gift catalog"
+          ></div>
+          <div class="gift-send-controls">
+            <label
+              >Quantity<input
+                id="gift-quantity"
+                type="number"
+                min="1"
+                max="99"
+                step="1"
+                value="1"
+            /></label>
+            <div
+              class="gift-quantity-shortcuts"
+              role="group"
+              aria-label="Quick gift quantities"
+            >
+              <button data-gift-quantity="1">×1</button
+              ><button data-gift-quantity="5">×5</button
+              ><button data-gift-quantity="10">×10</button>
+            </div>
+          </div>
+          <button id="gift-send" class="primary" disabled>
+            Choose a guest
+          </button>
+          <p id="gift-sender">Sending as Creator</p>
+          <p id="gift-status" role="status" aria-live="polite"></p>
+          <section
+            class="gift-history-section"
+            aria-label="Recent studio gifts"
+          >
+            <h3>Recent gifts</h3>
+            <div id="gift-history"></div>
+          </section>
+        </section>
+      </div>
+    </dialog>
+    <dialog id="account-dialog" aria-labelledby="account-dialog-title">
+      <div class="dialog-heading">
+        <h2 id="account-dialog-title">Your studio account</h2>
+        <button
+          class="icon-button"
+          data-close-dialog
+          aria-label="Close account settings"
+        >
+          ×
+        </button>
+      </div>
+      <div class="account-layout">
+        <section class="account-profile" aria-label="Local studio account">
+          <span class="eyebrow">LOCAL LIVE STUDIO</span>
+          <div id="account-signed-out">
+            <h3 id="account-form-title">Welcome back</h3>
+            <p id="account-form-description">
+              Sign in to your studio profile on this computer.
+            </p>
+            <div
+              class="account-mode-switch"
+              role="group"
+              aria-label="Account options"
+            >
+              <button id="account-login-mode" aria-pressed="true">
+                Sign in
+              </button>
+              <button id="account-create-mode" aria-pressed="false">
+                Create account
+              </button>
+            </div>
+            <form id="account-form">
+              <label id="account-name-label" hidden
+                >Display name<input
+                  id="account-name"
+                  autocomplete="nickname"
+                  minlength="2"
+                  maxlength="80"
+              /></label>
+              <label
+                >Email address<input
+                  id="account-email"
+                  type="email"
+                  autocomplete="username"
+                  maxlength="254"
+                  required
+              /></label>
+              <label
+                >Password<input
+                  id="account-password"
+                  type="password"
+                  autocomplete="current-password"
+                  minlength="12"
+                  maxlength="128"
+                  required
+              /></label>
+              <label id="account-confirm-label" hidden
+                >Confirm password<input
+                  id="account-confirm-password"
+                  type="password"
+                  autocomplete="new-password"
+                  minlength="12"
+                  maxlength="128"
+              /></label>
+              <p id="account-password-hint" hidden>
+                Choose 12–128 characters. Use a password dedicated to this
+                studio profile.
+              </p>
+              <p id="account-status" role="status" aria-live="polite"></p>
+              <button id="account-submit" class="primary" type="submit">
+                Sign in
+              </button>
+            </form>
+          </div>
+          <div id="account-signed-in" hidden>
+            <div
+              id="account-avatar"
+              class="account-avatar"
+              aria-hidden="true"
+            ></div>
+            <h3 id="account-display-name"></h3>
+            <p id="account-display-email"></p>
+            <span class="account-status-pill">Signed in on this computer</span>
+            <button id="account-sign-out">Sign out</button>
+            <p id="account-sign-out-status" role="status"></p>
+          </div>
+          <p class="account-local-note">
+            Studio accounts are saved on this computer and work offline. All
+            profiles under your Windows user share the same workspace and
+            recordings. This is separate from your TikTok account.
+          </p>
+        </section>
+        <section
+          class="account-services"
+          aria-labelledby="connected-services-title"
+        >
+          <span class="eyebrow">CONNECTED SERVICES</span>
+          <h3 id="connected-services-title">Connect your platforms</h3>
+          <div class="service-card">
+            <div class="service-heading">
+              <strong>TikTok</strong
+              ><span class="service-state" id="tiktok-state"
+                >Setup required</span
+              >
+            </div>
+            <p id="tiktok-summary">
+              Connect your TikTok profile through Login Kit.
+            </p>
+            <strong id="tiktok-profile" hidden></strong>
+            <div class="tiktok-actions">
+              <button id="tiktok-connect" class="primary" disabled>
+                Connect TikTok
+              </button>
+              <button id="tiktok-refresh" hidden>Refresh account</button>
+              <button id="tiktok-disconnect" hidden>Disconnect</button>
+              <button id="tiktok-cancel" hidden>Cancel sign-in</button>
+            </div>
+            <p id="tiktok-status" role="status" aria-live="polite"></p>
+            <button id="tiktok-forget" class="small-button" hidden>
+              Forget local link
+            </button>
+            <details id="tiktok-connection-details">
+              <summary>Connection setup</summary>
+              <p>
+                Register a TikTok developer app, enable Login Kit, and register
+                <code>http://127.0.0.1:*/tiktok/callback/</code> as its desktop
+                return address.
+              </p>
+              <form id="tiktok-setup-form">
+                <label
+                  >Connection server URL<input
+                    id="tiktok-broker-url"
+                    type="url"
+                    maxlength="2048"
+                    placeholder="https://your-connection-server.example/"
+                    required
+                /></label>
+                <button id="tiktok-save-settings" type="submit">
+                  Save connection server
+                </button>
+              </form>
+              <p>
+                Use a server you control. It holds the developer secret and
+                manages TikTok access. Your TikTok password is entered only on
+                TikTok’s website.
+              </p>
+              <p>
+                For local setup, run the included backend and use
+                <code>http://127.0.0.1:4317/</code>. Full steps are in
+                <strong>docs/TIKTOK-SETUP.md</strong>.
+              </p>
+              <p>
+                The link is shared by studio profiles on this Windows user.
+                Forget local link clears this computer only; Disconnect also
+                asks TikTok to revoke access.
+              </p>
+            </details>
+            <p class="tiktok-capability-note">
+              Profile connection does not enable LIVE broadcasting, remote
+              guests, chat, or paid gifts.
+            </p>
+          </div>
+          <div class="account-service-note">
+            <strong>Keep creating</strong>
+            <p>
+              Scene editing, local recording, web overlays, and media imports
+              are available without a linked platform.
+            </p>
+          </div>
+        </section>
+      </div>
+    </dialog>
+    <dialog id="source-dialog">
+      <div class="dialog-heading">
+        <h2>Add a source</h2>
+        <button
+          class="icon-button"
+          data-close-dialog
+          aria-label="Close source picker"
+        >
+          ×
+        </button>
+      </div>
+      <div class="source-options">
+        <button data-add="screen">
+          <span>▣</span><strong>Display or window</strong
+          ><small>Capture a screen, app, or game window</small></button
+        ><button data-add="camera">
+          <span>◉</span><strong>Camera</strong
+          ><small>Connect a webcam or capture device</small></button
+        ><button data-add="image">
+          <span>▧</span><strong>Image</strong
+          ><small>Add a photo, logo, or overlay</small></button
+        ><button data-add="video">
+          <span>▷</span><strong>Video</strong
+          ><small>Play a video from this computer</small></button
+        ><button data-add="text">
+          <span>T</span><strong>Text</strong
+          ><small>Add a title or lower third</small></button
+        ><button data-add="color">
+          <span>◼</span><strong>Color panel</strong
+          ><small>Add a solid background or accent</small>
+        </button>
+        <button data-add="browser">
+          <span>◎</span><strong>Browser / web overlay</strong
+          ><small>Include a website or online visual widget</small>
+        </button>
+        <button data-add="online-media">
+          <span>↓</span><strong>Online image or video</strong
+          ><small>Import a media URL and save it locally</small>
+        </button>
+        <button data-add="guest-board">
+          <span>🎁</span><strong>Guest boxes &amp; gifts</strong
+          ><small>Record local guest cards and gift animations</small>
+        </button>
+      </div>
+    </dialog>
+    <dialog id="capture-dialog">
+      <div class="dialog-heading">
+        <h2>Select a display or window</h2>
+        <button
+          class="icon-button"
+          data-close-dialog
+          aria-label="Close capture picker"
+        >
+          ×
+        </button>
+      </div>
+      <p>Choose the content to include in your scene.</p>
+      <div id="capture-options" class="capture-options"></div>
+    </dialog>
+    <dialog id="edit-dialog">
+      <form id="edit-form">
+        <div class="dialog-heading">
+          <h2 id="edit-dialog-title">Edit source</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close-dialog
+            aria-label="Close editor"
+          >
+            ×
+          </button>
+        </div>
+        <label>Name<input id="edit-name" maxlength="80" required /></label
+        ><label id="text-editor-label"
+          >Text<textarea id="edit-text" rows="3" maxlength="1000"></textarea>
+        </label>
+        <label id="web-editor-label" hidden
+          >Website URL<input
+            id="edit-url"
+            type="url"
+            maxlength="8192"
+            placeholder="https://example.com"
+        /></label>
+        <div class="edit-row">
+          <label id="color-editor-label"
+            >Color<input id="edit-color" type="color" value="#ffffff" /></label
+          ><label id="size-editor-label"
+            >Font size<input
+              id="edit-size"
+              type="number"
+              min="8"
+              max="400"
+              value="52"
+          /></label>
+        </div>
+        <label class="check-label" id="loop-editor-label"
+          ><input id="edit-loop" type="checkbox" checked /> Loop video</label
+        >
+        <div class="dialog-actions">
+          <button type="button" data-close-dialog>Cancel</button
+          ><button class="primary" type="submit">Save source</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="scene-dialog">
+      <form id="scene-form">
+        <div class="dialog-heading">
+          <h2 id="scene-dialog-title">Add scene</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close-dialog
+            aria-label="Close scene editor"
+          >
+            ×
+          </button>
+        </div>
+        <label
+          >Scene name<input id="scene-name" maxlength="80" required
+        /></label>
+        <div class="dialog-actions">
+          <button type="button" data-close-dialog>Cancel</button
+          ><button class="primary" type="submit">Save scene</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="settings-dialog">
+      <div class="dialog-heading">
+        <h2>Recording settings</h2>
+        <button
+          class="icon-button"
+          data-close-dialog
+          aria-label="Close recording settings"
+        >
+          ×
+        </button>
+      </div>
+      <label class="network-option"
+        ><input id="internet-enabled" type="checkbox" checked /> Enable Internet
+        access</label
+      >
+      <p>
+        Use web overlays and import online media. Switch this off to work
+        entirely offline.
+      </p>
+      <button id="check-connection">Check connection</button>
+      <p id="network-status" role="status">Internet access enabled.</p>
+      <label
+        >Frame rate<select id="fps-setting">
+          <option value="24">24 fps</option>
+          <option value="30">30 fps</option>
+          <option value="60">60 fps</option>
+        </select></label
+      ><label
+        >Video bitrate<select id="bitrate-setting">
+          <option value="1500000">1.5 Mbps · Smaller files</option>
+          <option value="3000000">3 Mbps · Balanced</option>
+          <option value="6000000">6 Mbps · High quality</option>
+          <option value="9000000">9 Mbps · Maximum quality</option>
+        </select></label
+      >
+      <p>
+        Recordings use WebM video with Opus audio. Most desktop browsers and VLC
+        can open these files.
+      </p>
+      <p id="output-location" class="file-location"></p>
+      <button id="settings-folder">Open recordings folder</button>
+    </dialog>
+    <dialog id="online-media-dialog">
+      <form id="online-media-form">
+        <div class="dialog-heading">
+          <h2>Import online media</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close-dialog
+            aria-label="Close online media import"
+          >
+            ×
+          </button>
+        </div>
+        <label
+          >Media type<select id="online-media-kind">
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+          </select></label
+        ><label
+          >Direct media URL<input
+            id="online-media-url"
+            type="url"
+            placeholder="https://example.com/video.mp4"
+            maxlength="8192"
+            required
+        /></label>
+        <p>
+          Use a direct link to an image or video file up to 250 MB. The
+          downloaded file is saved on this computer for offline use.
+        </p>
+        <p id="online-media-status" role="status"></p>
+        <div class="dialog-actions">
+          <button type="button" data-close-dialog>Cancel</button
+          ><button id="import-media-button" class="primary" type="submit">
+            Import media
+          </button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
