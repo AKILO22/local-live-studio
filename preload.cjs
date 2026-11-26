@@ -31,6 +31,18 @@ function subscribeClose(callback) {
 }
 const studio = Object.freeze({
   bootstrap: () => invoke('bootstrap'),
+  saveLiveDestination: input => invoke('live-save-destination', { provider: input?.provider, serverURL: input?.serverURL, streamKey: input?.streamKey }),
+  startLive: input => invoke('live-start', { fps: input?.fps, bitrate: input?.bitrate }),
+  writeLive: input => invoke('live-write', { id: input?.id, sequence: input?.sequence, bytes: bytesBuffer(input?.bytes, 4 * 1024 * 1024) }),
+  stopLive: () => invoke('live-stop'),
+  chooseLiveEncoder: () => invoke('live-pick-encoder'),
+  openLiveHelp: () => invoke('live-open-help'),
+  onLiveStatus: callback => {
+    if (typeof callback !== 'function') throw new TypeError('Expected a LIVE status handler.');
+    const listener = (_event, state) => callback(state);
+    ipcRenderer.on('studio:live-status', listener);
+    return () => ipcRenderer.removeListener('studio:live-status', listener);
+  },
   createAccount: input => invoke('account-create', { name: input?.name, email: input?.email, password: input?.password }),
   signIn: input => invoke('account-sign-in', { email: input?.email, password: input?.password }),
   signOut: () => invoke('account-sign-out'),

@@ -69,6 +69,7 @@
   }
   function apply(next) {
     state = next;
+    window.liveOutput?.setTikTok(next);
     render();
   }
   async function act(action) {

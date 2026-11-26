@@ -1,20 +1,32 @@
-# Download and run on Windows
+# Download and run Local LIVE Studio 1.5.0
 
-Download the release asset named `Local-LIVE-Studio-1.4.0-windows-x64.zip`. The automatically generated GitHub “Source code” archives contain source files and are intended for developers.
+1. Download `Local-LIVE-Studio-1.5.0-windows-x64.zip`. GitHub's automatic “Source code” archives are for developers.
+2. Extract the entire ZIP.
+3. Open **Launch Local LIVE Studio.cmd**, or open the **Local LIVE Studio** folder and run **Local LIVE Studio.exe**.
+4. Keep the extracted runtime files together.
 
-1. Save the Windows ZIP to your computer.
-2. In File Explorer, right-click it and choose **Extract All**.
-3. Open the extracted folder and double-click **Launch Local LIVE Studio.cmd**, or open the `Local LIVE Studio` folder and double-click **Local LIVE Studio.exe**.
-4. Keep the entire extracted folder together. The executable requires the runtime files beside it. You can move the extracted folder to another local drive before opening it.
+This is a Windows 10/11 x64 portable application. Electron is included. The build is unsigned and has no verified publisher certificate. Other operating systems and ARM64 have not been validated.
 
-The Windows ZIP includes the application runtime. Node.js, npm, a TikTok account, and developer tools are not required to run it. This release targets Windows 10/11 x64; other operating systems and ARM64 have not been validated. The build is unsigned: it does not carry a verified publisher code-signing certificate.
+## Streaming encoder
 
-Your workspace, local accounts, downloaded media, and studio gift history are saved under `%APPDATA%\Local LIVE Studio`. Recordings are saved under your Videos folder in `Local LIVE Studio`. Files are saved for the current Windows user, rather than inside the downloaded ZIP. Keep locally imported media available at its original path.
+LIVE output needs a separate **FFmpeg installation with libx264**. It is already installed on the setup computer. On another computer, install a trusted build from a source linked by [FFmpeg](https://ffmpeg.org/download.html). The app detects FFmpeg automatically, including the usual Windows WinGet link. If it is not found, choose **Set up LIVE destination → Choose ffmpeg.exe**. No FFmpeg binary is bundled in the ZIP.
 
-Internet access starts enabled and can be switched off in Recording settings. Studio editing, recording, accounts, and symbolic gifts work locally. Browser overlays and downloading online media need an Internet connection. Windows camera, microphone, and screen-capture permissions depend on the device.
+## Start and end LIVE
 
-TikTok profile linking requires a registered Login Kit app and the connection backend; see `TIKTOK-SETUP.md` in the source archive. A profile connection does not enable broadcasting, real LIVE guest video, chat, real TikTok gifts, Coins, or payouts. The Gifts panel manages local name cards and symbolic gift animations with no cash value. It does not deliver gifts to remote viewers.
+Prepare the scene and audio, link your TikTok profile in Account, and get a current LIVE server URL and stream key from TikTok if that access is available to your account. Save them in **Set up LIVE destination**, then choose **Start Live**. **End Live** replaces it while transmitting. Also end the broadcast in TikTok's app or LIVE dashboard.
 
-To update, close the app and extract a new release to a separate folder. Open its launcher. The same Windows user's saved workspace and recording folder are reused. The earlier extracted release can remain available if needed.
+Profile sign-in does not grant broadcasting permission or supply the stream key. The app cannot create or terminate a TikTok LIVE room through Login Kit. It sends and stops RTMP/RTMPS output. Read **docs/LIVESTREAM.md** for full instructions.
 
-The release includes `SHA256SUMS.txt` for checking downloaded files. In PowerShell, run `Get-FileHash -Algorithm SHA256` against the ZIP and compare the hash with that file.
+Custom RTMP / RTMPS can send to another server you control without a TikTok profile. Preparing scenes works offline; actual output needs connectivity.
+
+## Accounts and data
+
+Local studio profiles work on this Windows account and are separate from TikTok. Workspace data and protected connections are under `%APPDATA%\Local LIVE Studio`. Previous recordings remain in your Windows Videos folder; open them through Studio settings. Project files do not contain LIVE keys.
+
+TikTok linking needs a configured Login Kit backend, described in **docs/TIKTOK-SETUP.md**. That backend requires Node.js or an independently hosted service; it is not deployed by downloading the desktop ZIP. Existing setup on this computer continues to use its configured server.
+
+Guest cards and symbolic gift effects can appear in the outgoing scene. Remote guest video, LIVE chat, paid gifts, Coins and payouts are not implemented.
+
+To update, close the running studio before opening this new version. Your existing workspace is reused. Keep your previous version and connection-server files until the new version and saved account link have been checked.
+
+The release includes **SHA256SUMS.txt** for archive verification.

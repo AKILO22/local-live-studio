@@ -2,7 +2,7 @@
 
 Local LIVE Studio 1.4.0 includes Login Kit authorization, basic profile display, saved connections, profile refresh, and disconnection. No developer app or production credentials are supplied. Register a TikTok app and configure the included backend before connecting a real account.
 
-The connection requests only `user.info.basic` and displays the profile name. LIVE broadcasting, chat, remote guest video, paid TikTok gifts, Coins, and payouts are separate capabilities and remain unimplemented.
+The profile connection requests only `user.info.basic` and displays the profile name. Version 1.5.0 adds a separate RTMP/RTMPS broadcaster configured with the platform’s LIVE server URL and stream key; see [Livestream setup](LIVESTREAM.md). Login Kit itself does not supply broadcast credentials or LIVE room management. Chat, remote guest video, paid TikTok gifts, Coins, and payouts remain unimplemented.
 
 ## Register your developer app
 
@@ -67,4 +67,6 @@ Primary references: [Desktop Login Kit](https://developers.tiktok.com/docs/en/lo
 
 ## Verification scope
 
-Tests use synthetic credentials and mocked TikTok responses. They exercise real loopback HTTP between the desktop module and backend, encrypted persistence, state and PKCE verification, refresh rotation, revocation, offline cancellation, timeouts, and connection UI states. No registered TikTok app or real account has been authorized. Native UI and Windows protected storage with real TikTok credentials still need validation after registration and configuration.
+Automated tests use synthetic credentials and mocked TikTok responses. They exercise real loopback HTTP between the desktop module and backend, encrypted persistence, state and PKCE verification, refresh rotation, revocation, offline cancellation, timeouts, and connection UI states.
+
+On November 25, 2026, an authorized sandbox account completed TikTok sign-in in the installed Windows app. The native Account panel showed Connected, and Refresh account completed successfully with the same profile. The product website's ownership verification also completed. These checks validate this installation's profile connection; they do not establish production app approval or TikTok LIVE broadcast permission. Public TikTok transmission has not been verified because no platform-issued LIVE server URL and stream key have been obtained.

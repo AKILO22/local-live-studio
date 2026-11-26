@@ -532,6 +532,7 @@ async function resumeActiveMedia() {
 
 function renderNetworkState() {
   window.tiktokConnection?.setInternetEnabled(internetEnabled);
+  window.liveOutput?.setInternetEnabled(internetEnabled);
   $("#network-label").textContent = internetEnabled
     ? "Internet enabled"
     : "Offline mode";
@@ -540,7 +541,7 @@ function renderNetworkState() {
   $("#check-connection").disabled = !internetEnabled;
   $("#network-status").textContent = internetEnabled
     ? "Internet access enabled. Use Check connection to verify connectivity."
-    : "Internet access disabled. Local production and recording are available.";
+    : "Internet access disabled. Prepare your scenes offline; LIVE output is stopped.";
   for (const kind of ["browser", "online-media"])
     $("[data-add='" + kind + "']").disabled = !internetEnabled;
 }
@@ -1013,6 +1014,7 @@ function elapsed() {
 }
 
 function updateRecordingUI() {
+  if (!recording) { window.liveOutput?.render(); return; }
   const active = Boolean(recording);
   $("#record-label").textContent = active
     ? "Stop & save recording"
@@ -1426,7 +1428,7 @@ canvas.addEventListener("pointercancel", () => {
 });
 
 $("#canvas-preset").addEventListener("change", () => {
-  if (recording) return;
+  if (recording || window.liveOutput?.isActive()) return;
   const [width, height] = $("#canvas-preset").value.split("x").map(Number);
   const xScale = width / project.settings.width;
   const yScale = height / project.settings.height;
@@ -1627,12 +1629,14 @@ window.addEventListener("beforeunload", () => {
   if (project) bridge.saveProject(project).catch(() => {});
   for (const id of resources.keys()) releaseResource(id);
   micStream?.getTracks().forEach((track) => track.stop());
+  bridge.stopLive().catch(() => {});
 });
 
 bridge?.onCloseRequested(
   run(async () => {
     clearTimeout(saveTimer);
     if (project) await bridge.saveProject(project);
+    await window.liveOutput?.stop();
     const active = recording;
     if (active && active.recorder.state !== "inactive") active.recorder.stop();
     if (active) await active.finished;
@@ -1659,5 +1663,19 @@ async function init() {
   $("#output-location").textContent = "Saved to " + initial.outputDir;
   renderRecordings();
   await loadProject(initial.project);
+  window.liveOutput?.initialize(initial.live, {
+    getSettings: () => ({ fps: project.settings.fps, bitrate: project.settings.bitrate }),
+    createStream: async () => {
+      await ensureAudio();
+      const stream = canvas.captureStream(project.settings.fps);
+      audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+      return stream;
+    },
+    lockControls: active => {
+      for (const selector of ['#canvas-preset', '#fps-setting', '#bitrate-setting', '#import-project']) $(selector).disabled = active;
+    },
+    notify,
+  });
+  window.liveOutput?.setInternetEnabled(internetEnabled);
 }
 init().catch(report);

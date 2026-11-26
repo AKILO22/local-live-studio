@@ -8,7 +8,7 @@ const { createHash } = require('node:crypto');
 const ROOT = path.resolve(__dirname, '..');
 const NAME = 'Local LIVE Studio';
 const TARGET = `${NAME}-win32-x64`;
-const ROOT_FILES = new Set(['package.json', 'main.cjs', 'preload.cjs', 'index.html', 'styles.css', 'renderer.js', 'gifting.js', 'tiktok.js']);
+const ROOT_FILES = new Set(['package.json', 'main.cjs', 'preload.cjs', 'index.html', 'styles.css', 'renderer.js', 'gifting.js', 'tiktok.js', 'live.js']);
 
 function ignoreFile(input) {
   const relative = input.replace(/\\/g, '/').replace(/^\/+/, '');

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="styles.css" />
     <script src="gifting.js" defer></script>
     <script src="tiktok.js" defer></script>
+    <script src="live.js" defer></script>
     <script src="renderer.js" defer></script>
   </head>
   <body>
@@ -37,7 +38,7 @@
         ><button
           id="settings-button"
           class="icon-button"
-          aria-label="Recording settings"
+          aria-label="Studio settings"
         >
           ⚙
         </button>
@@ -94,8 +95,8 @@
         <div class="local-note">
           <span aria-hidden="true">▣</span>
           <p>
-            Created here. Saved here.<br /><small
-              >Your workspace and recordings stay on this computer.</small
+            Your scene. Your LIVE.<br /><small
+              >Prepare offline. Broadcast when you are ready.</small
             >
           </p>
         </div>
@@ -136,7 +137,7 @@
         <div class="preview-status">
           <span
             ><span class="status-dot"></span
-            ><span id="preview-mode">Ready to record</span></span
+            ><span id="preview-mode">Preview · Not live</span></span
           ><span id="format-status">1280 × 720 · 30 fps</span>
         </div>
         <section class="properties-bar" aria-label="Selected source properties">
@@ -167,7 +168,7 @@
         <section class="audio-panel panel">
           <div class="section-heading">
             <h2>Audio mixer</h2>
-            <span class="section-hint">Included in recordings</span>
+            <span class="section-hint">Your LIVE audio mix</span>
           </div>
           <div class="mixer-channels">
             <div class="mixer-channel">
@@ -219,7 +220,19 @@
         </section>
       </section>
       <aside class="right-sidebar">
-        <section class="panel session-panel">
+        <section class="panel live-panel" aria-labelledby="live-heading">
+          <div class="section-heading"><h2 id="live-heading">Livestream</h2><span id="live-state" class="state-badge" role="status">NOT LIVE</span></div>
+          <div class="live-destination"><span class="live-platform-icon" aria-hidden="true">◉</span><div><strong id="live-platform">TikTok LIVE</strong><small id="live-account">Connect your TikTok profile</small></div></div>
+          <div class="session-clock" id="live-clock">00:00:00</div>
+          <div class="record-details"><div><small>OUTPUT SENT</small><strong id="live-size">0 MB</strong></div><div><small>VIDEO BITRATE</small><strong id="bitrate-label">3 Mbps</strong></div></div>
+          <button id="live-start" class="live-start" disabled><span aria-hidden="true">◉</span> Start Live</button>
+          <button id="live-end" class="live-end" hidden><span aria-hidden="true">■</span> End Live</button>
+          <p id="live-status" role="status" aria-live="polite">Set up your LIVE destination to begin.</p>
+          <button id="live-setup-open" class="live-setup-button">Set up LIVE destination</button>
+          <button id="live-account-open" class="live-account-button">Connect account</button>
+        </section>
+        <section class="panel live-checklist" aria-label="Before you go live"><h2>Before you go live</h2><ul><li><span id="live-check-encoder">○</span> Streaming encoder</li><li><span id="live-check-destination">○</span> LIVE server and stream key</li><li><span id="live-check-internet">○</span> Internet access</li></ul><p>Your preview becomes the broadcast. Check your microphone, camera and scene before starting.</p><small>Set your title and category in TikTok. End the broadcast there too when you finish.</small></section>
+        <section class="panel session-panel" hidden>
           <div class="section-heading">
             <h2>Recording</h2>
             <span id="record-state" class="state-badge">READY</span>
@@ -232,7 +245,7 @@
             </div>
             <div>
               <small>VIDEO BITRATE</small
-              ><strong id="bitrate-label">3 Mbps</strong>
+              ><strong>3 Mbps</strong>
             </div>
           </div>
           <button id="record-button" class="record-button">
@@ -243,7 +256,7 @@
           </button>
           <p id="record-hint">Record your scene to a local video file.</p>
         </section>
-        <section class="panel recordings-panel">
+        <section class="panel recordings-panel" hidden>
           <div class="section-heading">
             <h2>Recordings</h2>
             <button
@@ -262,7 +275,7 @@
             >Private session notes</label
           ><textarea
             id="session-notes"
-            placeholder="Talking points, reminders, or your next take…"
+            placeholder="Talking points, reminders, or your LIVE plan…"
           ></textarea
           ><small>Saved with your project.</small>
         </section>
@@ -270,7 +283,7 @@
     </main>
     <footer class="app-footer">
       <span id="app-health"
-        >Local LIVE Studio · Independent desktop application</span
+        >Local LIVE Studio · Livestream production</span
       ><span id="resource-stats">Loading system status…</span>
     </footer>
     <div id="toast" role="status" hidden></div>
@@ -540,15 +553,15 @@
               </p>
             </details>
             <p class="tiktok-capability-note">
-              Profile connection does not enable LIVE broadcasting, remote
-              guests, chat, or paid gifts.
+              Profile linking identifies your account. Broadcasting also needs
+              the LIVE server URL and stream key supplied by TikTok. Remote
+              guest video, LIVE chat and paid gifts are not integrated.
             </p>
           </div>
           <div class="account-service-note">
             <strong>Keep creating</strong>
             <p>
-              Scene editing, local recording, web overlays, and media imports
-              are available without a linked platform.
+              Prepare scenes, mix audio, and add media before going live.
             </p>
           </div>
         </section>
@@ -682,11 +695,11 @@
     </dialog>
     <dialog id="settings-dialog">
       <div class="dialog-heading">
-        <h2>Recording settings</h2>
+        <h2>Studio settings</h2>
         <button
           class="icon-button"
           data-close-dialog
-          aria-label="Close recording settings"
+          aria-label="Close studio settings"
         >
           ×
         </button>
@@ -696,8 +709,8 @@
         access</label
       >
       <p>
-        Use web overlays and import online media. Switch this off to work
-        entirely offline.
+        Internet access is required for LIVE output, web overlays and online
+        media. Turning it off ends an active LIVE output.
       </p>
       <button id="check-connection">Check connection</button>
       <p id="network-status" role="status">Internet access enabled.</p>
@@ -709,18 +722,31 @@
         </select></label
       ><label
         >Video bitrate<select id="bitrate-setting">
-          <option value="1500000">1.5 Mbps · Smaller files</option>
+          <option value="1500000">1.5 Mbps · Lower bandwidth</option>
           <option value="3000000">3 Mbps · Balanced</option>
           <option value="6000000">6 Mbps · High quality</option>
           <option value="9000000">9 Mbps · Maximum quality</option>
         </select></label
       >
       <p>
-        Recordings use WebM video with Opus audio. Most desktop browsers and VLC
-        can open these files.
+        LIVE output uses H.264 video and AAC audio over RTMP or RTMPS. Choose
+        a bitrate that your upload connection can sustain.
       </p>
-      <p id="output-location" class="file-location"></p>
-      <button id="settings-folder">Open recordings folder</button>
+      <p id="output-location" class="file-location" hidden></p>
+      <button id="settings-folder">Open previous recordings</button>
+    </dialog>
+    <dialog id="live-setup-dialog" aria-labelledby="live-setup-title">
+      <div class="dialog-heading"><div><span class="eyebrow">BROADCAST CONNECTION</span><h2 id="live-setup-title">Set up your LIVE destination</h2></div><button class="icon-button" data-close-dialog aria-label="Close LIVE setup">×</button></div>
+      <p>For TikTok, link your profile in Account, then get the server URL and stream key from TikTok’s LIVE settings. A profile connection alone does not provide broadcast access.</p>
+      <form id="live-setup-form">
+        <label>Platform<select id="live-provider"><option value="tiktok">TikTok LIVE</option><option value="custom">Custom RTMP / RTMPS</option></select></label>
+        <label>LIVE server URL<input id="live-server-url" type="text" inputmode="url" placeholder="rtmps://your-platform-server/live" maxlength="2048" autocomplete="off" required></label>
+        <label>Stream key<input id="live-stream-key" type="password" maxlength="2048" autocomplete="off" placeholder="Paste the key from your platform" required></label>
+        <p class="section-hint">The destination and key stay in memory for this app session. The key is cleared from this form after saving. TikTok can issue new details for every broadcast.</p>
+        <p id="live-setup-status" role="status" aria-live="polite"></p>
+        <div class="dialog-actions"><button type="button" id="live-help">TikTok connection guide</button><button class="primary" id="live-save-destination" type="submit">Save LIVE destination</button></div>
+      </form>
+      <div class="live-encoder-setup"><h3>Streaming encoder</h3><p id="live-encoder-status">Checking for FFmpeg…</p><button id="live-choose-encoder">Choose ffmpeg.exe</button><p class="section-hint">FFmpeg with libx264 is required and is detected automatically when installed. It runs separately from this app.</p></div>
     </dialog>
     <dialog id="online-media-dialog">
       <form id="online-media-form">

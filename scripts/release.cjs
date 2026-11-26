@@ -8,12 +8,12 @@ const { spawn } = require('node:child_process');
 const ROOT = path.resolve(__dirname, '..');
 const SOURCE_FILES = Object.freeze([
   '.gitignore', 'package.json', 'package-lock.json', 'README.md', 'THIRD-PARTY-NOTICES.md',
-  'main.cjs', 'preload.cjs', 'renderer.js', 'gifting.js', 'tiktok.js', 'index.html', 'styles.css',
+  'main.cjs', 'preload.cjs', 'renderer.js', 'gifting.js', 'tiktok.js', 'live.js', 'index.html', 'styles.css',
   'lib/accounts.cjs', 'lib/gifts.cjs', 'lib/media.cjs', 'lib/online.cjs',
-  'lib/recordings.cjs', 'lib/security.cjs', 'lib/storage.cjs', 'lib/tiktok.cjs', 'lib/tiktok-http.cjs', 'server/tiktok-broker.cjs',
-  'scripts/package.cjs', 'scripts/release.cjs', 'scripts/publish-github.ps1',
-  'test/main.test.cjs', 'test/online.test.cjs', 'test/accounts.test.cjs', 'test/account-ui.test.cjs', 'test/gifts.test.cjs', 'test/release.test.cjs', 'test/tiktok.test.cjs', 'test/tiktok-ui.test.cjs',
-  'docs/DOWNLOAD.md', 'docs/RELEASE-NOTES-1.3.0.md', 'docs/RELEASE-NOTES-1.4.0.md', 'docs/TIKTOK-SETUP.md',
+  'lib/recordings.cjs', 'lib/security.cjs', 'lib/storage.cjs', 'lib/tiktok.cjs', 'lib/tiktok-http.cjs', 'lib/livestream.cjs', 'server/tiktok-broker.cjs',
+  'scripts/package.cjs', 'scripts/release.cjs', 'scripts/check-live-output.cjs', 'scripts/publish-github.ps1',
+  'test/main.test.cjs', 'test/online.test.cjs', 'test/accounts.test.cjs', 'test/account-ui.test.cjs', 'test/gifts.test.cjs', 'test/release.test.cjs', 'test/tiktok.test.cjs', 'test/tiktok-ui.test.cjs', 'test/livestream.test.cjs', 'test/live-ui.test.cjs',
+  'docs/DOWNLOAD.md', 'docs/RELEASE-NOTES-1.3.0.md', 'docs/RELEASE-NOTES-1.4.0.md', 'docs/RELEASE-NOTES-1.5.0.md', 'docs/TIKTOK-SETUP.md', 'docs/LIVESTREAM.md',
   '.github/workflows/windows-release.yml'
 ]);
 function releaseNames(version) {
@@ -69,7 +69,7 @@ async function prepareRelease(root = ROOT) {
     await fs.copyFile(path.join(root, 'README.md'), path.join(windows, 'USER-GUIDE.md'));
     await fs.copyFile(path.join(root, 'THIRD-PARTY-NOTICES.md'), path.join(windows, 'THIRD-PARTY-NOTICES.md'));
     await fs.mkdir(path.join(windows, 'docs'));
-    for (const file of ['DOWNLOAD.md', 'TIKTOK-SETUP.md']) await fs.copyFile(path.join(root, 'docs', file), path.join(windows, 'docs', file));
+    for (const file of ['DOWNLOAD.md', 'TIKTOK-SETUP.md', 'LIVESTREAM.md']) await fs.copyFile(path.join(root, 'docs', file), path.join(windows, 'docs', file));
     const sourceRoot = path.join(source, 'local-live-studio');
     for (const file of SOURCE_FILES) {
       const target = path.join(sourceRoot, file);

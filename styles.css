@@ -11,6 +11,39 @@
   --cyan: #38d5ce;
   --red: #ff466c;
 }
+.right-sidebar { overflow-y: auto; padding-right: 3px; }
+.right-sidebar > .panel { flex: 0 0 auto; overflow: visible; }
+.right-sidebar > .live-panel { border-color: #3a6964; background: linear-gradient(160deg, #202c30, #1b1e25 55%); padding: 18px; }
+.right-sidebar > .notes-panel { min-height: 160px; }
+.live-panel h2 { font-size: 18px; }
+.live-panel > .section-heading { padding: 0 0 8px; }
+.live-panel .state-badge { white-space: nowrap; }
+.live-destination { display: flex; align-items: center; gap: 11px; margin-top: 24px; }
+.live-platform-icon { display: grid; place-items: center; background: #173d3a; color: #72eee2; width: 38px; height: 38px; font-size: 24px; border-radius: 11px; }
+.live-destination strong { font-size: 15px; display: block; }
+.live-destination small { display: block; color: #b2c7cc; margin-top: 4px; overflow-wrap: anywhere; }
+.live-start, .live-end { display: block; width: 100%; font-size: 17px; font-weight: 700; border: 0; padding: 15px; border-radius: 8px; margin-top: 18px; }
+.live-start { background: #38d5ce; color: #092625; }
+.live-start:hover { background: #6ee9de; }
+.live-end { background: #ff466c; color: white; }
+.live-end:hover { background: #e13a5e; }
+.live-start:disabled { opacity: .45; cursor: not-allowed; }
+.live-panel .state-badge.is-live { color: #fff; background: #bb2b48; border: 1px solid #f3748c; }
+.live-panel #live-status { line-height: 1.6; color: #b6c8d0; min-height: 44px; font-size: 13px; margin-bottom: 15px; }
+.live-setup-button { width: 100%; font-size: 13px; }
+.live-account-button { width: 100%; border: 0; background: transparent; color: #70e4d8; margin-top: 9px; }
+.live-checklist { padding: 17px; }
+.live-checklist h2 { margin: 0 0 15px; font-size: 15px; }
+.live-checklist ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.live-checklist li { display: flex; gap: 10px; align-items: center; }
+.live-checklist li span { color: #5bddd0; width: 15px; }
+.live-checklist p, .live-checklist small { line-height: 1.6; color: #a5b6c2; font-size: 12px; }
+.live-encoder-setup { margin-top: 25px; border-top: 1px solid var(--line); padding-top: 16px; }
+#live-setup-dialog { max-width: 620px; }
+#live-setup-dialog label { margin-top: 18px; }
+#live-setup-dialog input, #live-setup-dialog select { width: 100%; }
+#live-setup-dialog p { line-height: 1.6; }
+#live-setup-status { color: #ffb3c2; }
 * {
   box-sizing: border-box;
 }

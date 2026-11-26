@@ -12,6 +12,7 @@ const { createOnlineServices } = require('./lib/online.cjs');
 const { AccountStore } = require('./lib/accounts.cjs');
 const { GiftStore } = require('./lib/gifts.cjs');
 const { TikTokConnection } = require('./lib/tiktok.cjs');
+const { LiveStream } = require('./lib/livestream.cjs');
 
 const NAME = 'Local LIVE Studio';
 const ROOT = __dirname;
@@ -39,6 +40,7 @@ let accounts;
 let gifts;
 let tiktok;
 let tiktokSession;
+let livestream;
 let studioSession;
 let preferencesFile;
 let preferenceWrites = Promise.resolve();
@@ -57,13 +59,23 @@ function registerBridge(outputDir) {
   ipcMain.on('studio:user-action', event => {
     try { access.noteAction(event); } catch { /* untrusted frame */ }
   });
-  handle('bootstrap', async () => ({ project: await projects.load(), recordings: await recorder.list(), outputDir, appVersion: app.getVersion(), network: { enabled: internetEnabled }, account: await accounts.status(), gifts: await gifts.snapshot(), tiktok: await tiktok.initialize() }));
+  handle('bootstrap', async () => ({ project: await projects.load(), recordings: await recorder.list(), outputDir, appVersion: app.getVersion(), network: { enabled: internetEnabled }, account: await accounts.status(), gifts: await gifts.snapshot(), tiktok: await tiktok.initialize(), live: livestream.snapshot() }));
+  handle('live-save-destination', input => { access.requireAction(); return livestream.saveDestination(input); });
+  handle('live-start', settings => { access.requireAction(); return livestream.start(settings); });
+  handle('live-write', input => livestream.write(input));
+  handle('live-stop', () => livestream.stop());
+  handle('live-pick-encoder', async () => {
+    access.requireAction();
+    const result = await dialog.showOpenDialog(win, { title: 'Choose FFmpeg livestream encoder', properties: ['openFile'], filters: [{ name: 'FFmpeg executable', extensions: ['exe'] }] });
+    return result.canceled || !result.filePaths[0] ? livestream.snapshot() : livestream.setEncoder(result.filePaths[0]);
+  });
+  handle('live-open-help', () => { access.requireAction(); return shell.openExternal('https://inapp.tiktokv.com/falcon/webcast_mt/page/obs_intro/index.html'); });
   handle('tiktok-save-settings', url => { access.requireAction(); return tiktok.saveSettings(url); });
   handle('tiktok-connect', () => { access.requireAction(); return tiktok.connect(); });
   handle('tiktok-cancel', () => { access.requireAction(); return tiktok.cancel(); });
   handle('tiktok-refresh', () => { access.requireAction(); return tiktok.refresh(); });
-  handle('tiktok-disconnect', () => { access.requireAction(); return tiktok.disconnect(); });
-  handle('tiktok-forget', () => { access.requireAction(); return tiktok.forget(); });
+  handle('tiktok-disconnect', () => { access.requireAction(); if (livestream.active || livestream.status === 'connecting') throw new Error('End Live before disconnecting TikTok.'); return tiktok.disconnect(); });
+  handle('tiktok-forget', () => { access.requireAction(); if (livestream.active || livestream.status === 'connecting') throw new Error('End Live before forgetting the account.'); return tiktok.forget(); });
   handle('gift-add-guest', input => { access.requireAction(); return gifts.addGuest(input); });
   handle('gift-remove-guest', id => { access.requireAction(); return gifts.removeGuest(id); });
   handle('gift-send', async input => { access.requireAction(); return gifts.send(input, (await accounts.status()).user?.name || 'Creator'); });
@@ -74,6 +86,7 @@ function registerBridge(outputDir) {
     access.requireAction();
     if (typeof enabled !== 'boolean') throw new TypeError('Choose whether Internet access is enabled.');
     const operation = preferenceWrites.then(async () => {
+      if (!enabled) await livestream.stop('LIVE output stopped because Internet access was turned off.');
       await atomicWrite(preferencesFile, JSON.stringify({ internetEnabled: enabled }));
       internetEnabled = enabled;
       if (!enabled) {
@@ -136,7 +149,7 @@ function registerBridge(outputDir) {
   handle('recording-finish', options => recorder.finish(options));
   handle('recording-cancel', options => recorder.cancel(options));
   handle('finish-close', async () => {
-    if (!closeAcknowledgement || recorder.active) return false;
+    if (!closeAcknowledgement || recorder.active || livestream.active) return false;
     await projects.idle();
     closeAcknowledgement(true);
     return true;
@@ -218,6 +231,11 @@ async function confirmClose() {
   closeInProgress = true;
   try {
     let keepPartial = false;
+    if (livestream.active || livestream.status === 'connecting') {
+      const result = await dialog.showMessageBox(win, { type: 'question', title: 'LIVE output in progress', message: 'End Live and close the studio?', detail: 'This stops audio and video transmission. Also end the broadcast in TikTok’s app or dashboard.', buttons: ['End Live and close', 'Keep Live'], defaultId: 1, cancelId: 1, noLink: true });
+      if (result.response !== 0) { quitting = false; return; }
+      await livestream.stop();
+    }
     if (recorder.active) {
       const { response } = await dialog.showMessageBox(win, { type: 'question', title: 'Recording in progress', message: 'Finish the recording before closing?', detail: 'Finishing saves the final video. Keeping a partial leaves received video chunks in the recordings folder for recovery.', buttons: ['Finish recording', 'Keep recording', 'Keep partial and quit'], defaultId: 0, cancelId: 1, noLink: true });
       if (response === 1) { quitting = false; return; }
@@ -236,6 +254,7 @@ async function confirmClose() {
     await accounts.idle();
     await gifts.idle();
     await tiktok.close();
+    await livestream.stop();
     await online.disconnect();
     await log.idle?.();
     allowClose = true;
@@ -277,6 +296,7 @@ function createWindow(studioSession) {
     access.reset();
     online.disconnect();
     tiktok.cancel();
+    livestream.stop('LIVE output stopped because the studio window closed unexpectedly.').catch(() => {});
     recorder.cancelAll().catch(error => report('crash-recording-recovery', error));
   });
   win.webContents.on('preload-error', (_event, file, error) => report('preload-error', error));
@@ -337,6 +357,14 @@ if (!app.requestSingleInstanceLock()) {
       openExternal: url => shell.openExternal(url),
       onStatus: state => { if (win && !win.isDestroyed()) win.webContents.send('studio:tiktok-status', state); } });
     await tiktok.initialize();
+    livestream = new LiveStream({ dataDir: app.getPath('userData'), isEnabled: () => internetEnabled,
+      verifyTikTok: async () => {
+        if (!tiktok.snapshot().hasSavedLink) throw new Error('Connect your TikTok account in Account before starting TikTok LIVE.');
+        const linked = await tiktok.refresh();
+        if (linked.status !== 'connected') throw new Error('Refresh your TikTok account connection before starting LIVE.');
+      },
+      onStatus: state => { if (win && !win.isDestroyed()) win.webContents.send('studio:live-status', state); } });
+    await livestream.initialize();
     online = createOnlineServices({ BrowserWindow, session, dataDir: app.getPath('userData'), media, getWindow: () => win, isEnabled: () => internetEnabled, onBlocked: () => { blockedRequests += 1; } });
     registerBridge(outputDir);
     createWindow(studioSession);
