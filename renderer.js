@@ -8,6 +8,7 @@ const resources = new Map();
 const sourceIcons = {
   screen: "▣",
   camera: "◉",
+  "phone-camera": "▯",
   image: "▧",
   video: "▷",
   text: "T",
@@ -286,7 +287,7 @@ function renderProperties() {
   $("#source-status").textContent = source
     ? source.locked
       ? "Position locked"
-      : ["camera", "screen"].includes(source.type) && !connected
+      : ["camera", "screen", "phone-camera"].includes(source.type) && !connected
         ? "Capture is disconnected"
         : source.type.charAt(0).toUpperCase() + source.type.slice(1) + " source"
     : "Adjust its position and appearance here.";
@@ -309,7 +310,7 @@ function renderProperties() {
   }
   $("#fit-source").disabled = source.locked;
   $("#reconnect-source").hidden =
-    !["camera", "screen", "browser"].includes(source.type) ||
+    !["camera", "screen", "phone-camera", "browser"].includes(source.type) ||
     (connected && source.type !== "browser");
   $("#reconnect-source").textContent =
     source.type === "browser" ? "Reload website" : "Reconnect";
@@ -533,6 +534,7 @@ async function resumeActiveMedia() {
 function renderNetworkState() {
   window.tiktokConnection?.setInternetEnabled(internetEnabled);
   window.liveOutput?.setInternetEnabled(internetEnabled);
+  window.phoneStudio?.setInternetEnabled(internetEnabled);
   $("#network-label").textContent = internetEnabled
     ? "Internet enabled"
     : "Offline mode";
@@ -926,6 +928,7 @@ async function addSource(type) {
   }
   if (type === "screen") return chooseScreen();
   if (type === "camera") return cameraSource();
+  if (type === "phone-camera") return window.phoneStudio.open();
   if (type === "browser")
     return editSource(
       newSource("browser", "Web overlay", { url: "https://example.com" }),
@@ -1323,6 +1326,7 @@ $("#reconnect-source").addEventListener(
     const source = selectedSource();
     if (source?.type === "screen") await chooseScreen(source);
     if (source?.type === "camera") await cameraSource(source);
+    if (source?.type === "phone-camera") window.phoneStudio.open();
     if (source?.type === "browser") {
       await releaseResource(source.id);
       await syncWebSources();
@@ -1625,6 +1629,8 @@ setInterval(
 );
 
 window.addEventListener("beforeunload", () => {
+  window.phoneStudio?.close();
+  bridge.stopPhones().catch(() => {});
   clearTimeout(saveTimer);
   if (project) bridge.saveProject(project).catch(() => {});
   for (const id of resources.keys()) releaseResource(id);
@@ -1663,6 +1669,30 @@ async function init() {
   $("#output-location").textContent = "Saved to " + initial.outputDir;
   renderRecordings();
   await loadProject(initial.project);
+  window.phoneStudio?.initialize(initial.phones, {
+    monitorStream: async () => {
+      await ensureAudio();
+      const stream = canvas.captureStream(Math.min(24, project.settings.fps));
+      audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track.clone()));
+      return stream;
+    },
+    addCamera: async (stream, name) => {
+      let sources = project.scenes.flatMap(scene => scene.sources).filter(source => source.type === 'phone-camera');
+      let added;
+      if (!currentScene().sources.some(source => source.type === 'phone-camera')) {
+        added = newSource('phone-camera', name + ' camera', { width: Math.round(canvas.width * 0.45), height: Math.round(canvas.height * 0.65), x: Math.round(canvas.width * 0.5), y: Math.round(canvas.height * 0.15) });
+        sources.push(added);
+      }
+      for (const source of sources) await activateCapture(source, stream.clone());
+      if (added) commitSource(added); else renderWorkspace();
+      notify('Phone camera connected. Review its position in your scene.');
+    },
+    removeCamera: () => {
+      for (const scene of project.scenes) for (const source of scene.sources) if (source.type === 'phone-camera') releaseResource(source.id);
+      renderProperties();
+    },
+  });
+  window.phoneStudio?.setInternetEnabled(internetEnabled);
   window.liveOutput?.initialize(initial.live, {
     getSettings: () => ({ fps: project.settings.fps, bitrate: project.settings.bitrate }),
     createStream: async () => {

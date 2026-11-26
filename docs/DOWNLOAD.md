@@ -1,6 +1,6 @@
-# Download and run Local LIVE Studio 1.5.0
+# Download and run Local LIVE Studio 1.6.0
 
-1. Download `Local-LIVE-Studio-1.5.0-windows-x64.zip`. GitHub's automatic “Source code” archives are for developers.
+1. Download `Local-LIVE-Studio-1.6.0-windows-x64.zip`. GitHub's automatic “Source code” archives are for developers.
 2. Extract the entire ZIP.
 3. Open **Launch Local LIVE Studio.cmd**, or open the **Local LIVE Studio** folder and run **Local LIVE Studio.exe**.
 4. Keep the extracted runtime files together.
@@ -8,6 +8,8 @@
 This is a Windows 10/11 x64 portable application. Electron is included. The build is unsigned and has no verified publisher certificate. Other operating systems and ARM64 have not been validated.
 
 ## Streaming encoder
+
+For phone features, open **Phone** in the header, choose the official Cloudflare connection helper if not detected, and create a phone link. Scan its QR code, choose Phone Camera, Phone Monitor, or Camera + Monitor, then approve the phone on the computer. Both devices should use the same Wi-Fi. Phone Monitor works without a TikTok stream key and does not need FFmpeg. Read **docs/PHONE.md** for the full workflow.
 
 LIVE output needs a separate **FFmpeg installation with libx264**. It is already installed on the setup computer. On another computer, install a trusted build from a source linked by [FFmpeg](https://ffmpeg.org/download.html). The app detects FFmpeg automatically, including the usual Windows WinGet link. If it is not found, choose **Set up LIVE destination → Choose ffmpeg.exe**. No FFmpeg binary is bundled in the ZIP.
 

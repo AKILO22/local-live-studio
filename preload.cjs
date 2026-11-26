@@ -31,6 +31,27 @@ function subscribeClose(callback) {
 }
 const studio = Object.freeze({
   bootstrap: () => invoke('bootstrap'),
+  startPhones: () => invoke('phone-start'),
+  stopPhones: () => invoke('phone-stop'),
+  acceptPhone: id => invoke('phone-accept', id),
+  disconnectPhone: id => invoke('phone-disconnect', id),
+  sendPhoneSignal: input => invoke('phone-signal', { deviceId: input?.deviceId, signal: input?.signal }),
+  setPhonePeerState: (id, state) => invoke('phone-peer-state', id, state),
+  copyPhoneLink: () => invoke('phone-copy-link'),
+  choosePhoneHelper: () => invoke('phone-pick-helper'),
+  openPhoneHelperDownload: () => invoke('phone-helper-download'),
+  onPhoneStatus: callback => {
+    if (typeof callback !== 'function') throw new TypeError('Expected a phone status handler.');
+    const listener = (_event, state) => callback(state);
+    ipcRenderer.on('studio:phone-status', listener);
+    return () => ipcRenderer.removeListener('studio:phone-status', listener);
+  },
+  onPhoneSignal: callback => {
+    if (typeof callback !== 'function') throw new TypeError('Expected a phone signal handler.');
+    const listener = (_event, value) => callback(value);
+    ipcRenderer.on('studio:phone-signal', listener);
+    return () => ipcRenderer.removeListener('studio:phone-signal', listener);
+  },
   saveLiveDestination: input => invoke('live-save-destination', { provider: input?.provider, serverURL: input?.serverURL, streamKey: input?.streamKey }),
   startLive: input => invoke('live-start', { fps: input?.fps, bitrate: input?.bitrate }),
   writeLive: input => invoke('live-write', { id: input?.id, sequence: input?.sequence, bytes: bytesBuffer(input?.bytes, 4 * 1024 * 1024) }),

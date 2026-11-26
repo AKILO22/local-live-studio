@@ -9,9 +9,12 @@
     />
     <title>Local LIVE Studio</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="phone-studio.css" />
     <script src="gifting.js" defer></script>
     <script src="tiktok.js" defer></script>
     <script src="live.js" defer></script>
+    <script src="vendor/qrcode.js" defer></script>
+    <script src="phones.js" defer></script>
     <script src="renderer.js" defer></script>
   </head>
   <body>
@@ -32,6 +35,7 @@
           aria-label="Open guest boxes and studio gifts"
         >
           🎁 Gifts</button
+        ><button id="phones-button" aria-label="Connect phone camera or monitor">Phone<span id="phone-summary" class="phone-header-summary">Camera and studio monitor</span></button
         ><button id="account-button" aria-label="Sign in or manage accounts">
           <span class="account-icon" aria-hidden="true">◉</span>
           <span id="account-button-label">Sign in / Account</span></button
@@ -582,6 +586,7 @@
         <button data-add="screen">
           <span>▣</span><strong>Display or window</strong
           ><small>Capture a screen, app, or game window</small></button
+        ><button data-add="phone-camera"><span>▯</span><strong>Phone Camera</strong><small>Pair your phone camera or watch the studio on your phone</small></button
         ><button data-add="camera">
           <span>◉</span><strong>Camera</strong
           ><small>Connect a webcam or capture device</small></button
@@ -747,6 +752,16 @@
         <div class="dialog-actions"><button type="button" id="live-help">TikTok connection guide</button><button class="primary" id="live-save-destination" type="submit">Save LIVE destination</button></div>
       </form>
       <div class="live-encoder-setup"><h3>Streaming encoder</h3><p id="live-encoder-status">Checking for FFmpeg…</p><button id="live-choose-encoder">Choose ffmpeg.exe</button><p class="section-hint">FFmpeg with libx264 is required and is detected automatically when installed. It runs separately from this app.</p></div>
+    </dialog>
+    <dialog id="phone-dialog" aria-labelledby="phone-dialog-title">
+      <div class="dialog-heading"><h2 id="phone-dialog-title">Connect your phone</h2><button type="button" class="icon-button" data-close-dialog aria-label="Close phone connections">×</button></div>
+      <p>Use <strong>Phone Camera</strong> to add your phone’s video to a scene. Use <strong>Phone Monitor</strong> to watch the composed studio video and audio on your phone. Camera + Monitor supports both on the same phone.</p>
+      <p>Keep both devices on the same Wi-Fi. A secure phone link uses the Cloudflare helper and Internet access for the page and connection setup; video travels through an encrypted WebRTC connection. Phone monitoring works without a TikTok stream key and does not start a public LIVE.</p>
+      <p id="phone-helper-state"></p><div class="phone-device-actions"><button type="button" id="phone-choose-helper">Choose cloudflared.exe</button><button type="button" id="phone-get-helper">Get connection helper</button></div>
+      <div class="phone-device-actions"><button type="button" id="phone-create" class="primary">Create phone link</button><button type="button" id="phone-stop" hidden>Stop phone connections</button></div>
+      <p id="phone-status" role="status" aria-live="polite"></p>
+      <section id="phone-link-panel" hidden><canvas id="phone-qr" role="img" aria-label="Scan this QR code with your phone camera"></canvas><label>Phone pairing link<input id="phone-link" readonly autocomplete="off" spellcheck="false"></label><button type="button" id="phone-copy-link">Copy phone link</button><p>Scan the QR code, choose a mode on your phone, then approve it below. New pairings expire after 15 minutes. Stop phone connections to end all phone access.</p></section>
+      <h3>Phones</h3><p id="phone-empty">No phones are waiting or connected.</p><ul id="phone-devices"></ul>
     </dialog>
     <dialog id="online-media-dialog">
       <form id="online-media-form">

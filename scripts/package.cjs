@@ -8,12 +8,13 @@ const { createHash } = require('node:crypto');
 const ROOT = path.resolve(__dirname, '..');
 const NAME = 'Local LIVE Studio';
 const TARGET = `${NAME}-win32-x64`;
-const ROOT_FILES = new Set(['package.json', 'main.cjs', 'preload.cjs', 'index.html', 'styles.css', 'renderer.js', 'gifting.js', 'tiktok.js', 'live.js']);
+const ROOT_FILES = new Set(['package.json', 'main.cjs', 'preload.cjs', 'index.html', 'styles.css', 'renderer.js', 'gifting.js', 'tiktok.js', 'live.js', 'phones.js', 'phone-studio.css']);
 
 function ignoreFile(input) {
   const relative = input.replace(/\\/g, '/').replace(/^\/+/, '');
   if (!relative) return false;
   if (ROOT_FILES.has(relative) || relative === 'lib' || /^lib\/[^/]+\.cjs$/.test(relative)) return false;
+  if (['phone', 'phone/index.html', 'phone/phone-client.js', 'phone/phone.css', 'vendor', 'vendor/qrcode.js', 'vendor/QR-LICENSE.txt'].includes(relative)) return false;
   // No runtime npm dependencies. In particular, omit tests, evidence, .git,
   // release, documentation, build tools, and every development node_module.
   return true;

@@ -3,7 +3,7 @@
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const { pathToFileURL } = require('node:url');
-const { app, BrowserWindow, Menu, dialog, ipcMain, desktopCapturer, protocol, session, shell, safeStorage } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, desktopCapturer, protocol, session, shell, safeStorage, clipboard } = require('electron');
 const { ProjectStore, atomicWrite, encodeProject, readProject, createLogger } = require('./lib/storage.cjs');
 const { MediaRegistry, MEDIA, localPath } = require('./lib/media.cjs');
 const { RecordingStore } = require('./lib/recordings.cjs');
@@ -13,6 +13,7 @@ const { AccountStore } = require('./lib/accounts.cjs');
 const { GiftStore } = require('./lib/gifts.cjs');
 const { TikTokConnection } = require('./lib/tiktok.cjs');
 const { LiveStream } = require('./lib/livestream.cjs');
+const { PhoneBridge } = require('./lib/phone.cjs');
 
 const NAME = 'Local LIVE Studio';
 const ROOT = __dirname;
@@ -41,6 +42,7 @@ let gifts;
 let tiktok;
 let tiktokSession;
 let livestream;
+let phones;
 let studioSession;
 let preferencesFile;
 let preferenceWrites = Promise.resolve();
@@ -59,7 +61,20 @@ function registerBridge(outputDir) {
   ipcMain.on('studio:user-action', event => {
     try { access.noteAction(event); } catch { /* untrusted frame */ }
   });
-  handle('bootstrap', async () => ({ project: await projects.load(), recordings: await recorder.list(), outputDir, appVersion: app.getVersion(), network: { enabled: internetEnabled }, account: await accounts.status(), gifts: await gifts.snapshot(), tiktok: await tiktok.initialize(), live: livestream.snapshot() }));
+  handle('bootstrap', async () => ({ project: await projects.load(), recordings: await recorder.list(), outputDir, appVersion: app.getVersion(), network: { enabled: internetEnabled }, account: await accounts.status(), gifts: await gifts.snapshot(), tiktok: await tiktok.initialize(), live: livestream.snapshot(), phones: phones.snapshot() }));
+  handle('phone-start', () => { access.requireAction(); return phones.start(); });
+  handle('phone-stop', () => phones.stop());
+  handle('phone-accept', id => { access.requireAction(); return phones.accept(id); });
+  handle('phone-disconnect', id => { access.requireAction(); return phones.remove(id); });
+  handle('phone-signal', input => phones.send(input?.deviceId, input?.signal));
+  handle('phone-peer-state', (id, state) => phones.setPeerState(id, state));
+  handle('phone-copy-link', () => { access.requireAction(); const url = phones.snapshot().pairingURL; if (!url) throw new Error('Create a phone link first.'); clipboard.writeText(url); return true; });
+  handle('phone-helper-download', () => { access.requireAction(); return shell.openExternal('https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/'); });
+  handle('phone-pick-helper', async () => {
+    access.requireAction();
+    const selected = await dialog.showOpenDialog(win, { title: 'Choose the Cloudflare phone connection helper', properties: ['openFile'], filters: [{ name: 'Cloudflare executable', extensions: ['exe'] }] });
+    return selected.canceled || !selected.filePaths[0] ? phones.snapshot() : phones.setHelper(selected.filePaths[0]);
+  });
   handle('live-save-destination', input => { access.requireAction(); return livestream.saveDestination(input); });
   handle('live-start', settings => { access.requireAction(); return livestream.start(settings); });
   handle('live-write', input => livestream.write(input));
@@ -86,7 +101,7 @@ function registerBridge(outputDir) {
     access.requireAction();
     if (typeof enabled !== 'boolean') throw new TypeError('Choose whether Internet access is enabled.');
     const operation = preferenceWrites.then(async () => {
-      if (!enabled) await livestream.stop('LIVE output stopped because Internet access was turned off.');
+      if (!enabled) { await livestream.stop('LIVE output stopped because Internet access was turned off.'); await phones.stop(); }
       await atomicWrite(preferencesFile, JSON.stringify({ internetEnabled: enabled }));
       internetEnabled = enabled;
       if (!enabled) {
@@ -255,6 +270,7 @@ async function confirmClose() {
     await gifts.idle();
     await tiktok.close();
     await livestream.stop();
+    await phones.stop();
     await online.disconnect();
     await log.idle?.();
     allowClose = true;
@@ -297,6 +313,7 @@ function createWindow(studioSession) {
     online.disconnect();
     tiktok.cancel();
     livestream.stop('LIVE output stopped because the studio window closed unexpectedly.').catch(() => {});
+    phones.stop().catch(() => {});
     recorder.cancelAll().catch(error => report('crash-recording-recovery', error));
   });
   win.webContents.on('preload-error', (_event, file, error) => report('preload-error', error));
@@ -365,6 +382,10 @@ if (!app.requestSingleInstanceLock()) {
       },
       onStatus: state => { if (win && !win.isDestroyed()) win.webContents.send('studio:live-status', state); } });
     await livestream.initialize();
+    phones = new PhoneBridge({ dataDir: app.getPath('userData'), downloadsDir: app.getPath('downloads'), assetDir: path.join(ROOT, 'phone'), isEnabled: () => internetEnabled,
+      onStatus: state => { if (win && !win.isDestroyed()) win.webContents.send('studio:phone-status', state); },
+      onSignal: event => { if (win && !win.isDestroyed()) win.webContents.send('studio:phone-signal', event); } });
+    await phones.initialize();
     online = createOnlineServices({ BrowserWindow, session, dataDir: app.getPath('userData'), media, getWindow: () => win, isEnabled: () => internetEnabled, onBlocked: () => { blockedRequests += 1; } });
     registerBridge(outputDir);
     createWindow(studioSession);

@@ -7,3 +7,7 @@ Local LIVE Studio is an independent application. It is not affiliated with or en
 The Windows distribution includes Electron and its bundled Chromium, Node.js, and other runtime components. Their license notices are included beside the executable in `Local LIVE Studio/LICENSE` and `Local LIVE Studio/LICENSES.chromium.html`. Keep those files with the distribution.
 
 Development tools and their license metadata are identified in `package-lock.json`. Development dependencies are not bundled as application npm dependencies.
+
+Version 1.6.0 includes qrcode-generator 2.0.4 by Kazuhiko Arase for local QR-code rendering. Its MIT license is included at `vendor/QR-LICENSE.txt` inside the application and source archive. Project: https://github.com/kazuhikoarase/qrcode-generator . No external QR-code service receives pairing links.
+
+Phone HTTPS links use an independently installed cloudflared executable. This helper is not bundled in the application. Cloudflare distributes it under its own license and notices: https://github.com/cloudflare/cloudflared . Quick Tunnel hosting is a separate Cloudflare service.

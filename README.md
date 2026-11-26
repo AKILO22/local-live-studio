@@ -1,6 +1,8 @@
 # Local LIVE Studio
 
-An independent Windows livestream studio. Version 1.5.0 makes **Start Live** and **End Live** the main workflow, with scene composition, a mixed audio feed, output status, duration, transmitted bytes and RTMP/RTMPS broadcasting. The recording controls and recording library are no longer on the main screen. Existing recordings remain on disk.
+An independent Windows livestream studio. Version 1.6.0 adds **Phone Camera**, **Phone Monitor**, and **Camera + Monitor**, using QR pairing and desktop device approval. **Start Live** and **End Live** remain the public streaming workflow, with scene composition, mixed audio, output status and RTMP/RTMPS broadcasting. Previous recordings remain on disk.
+
+Open **Phone** in the header to connect a phone on the same Wi-Fi. Phone Camera adds its video to a scene. Phone Monitor displays the studio's composed video and audio without a TikTok stream key or public broadcast. A separate official cloudflared helper provides the secure phone page. See [Phone setup](docs/PHONE.md).
 
 TikTok profile linking uses Login Kit and `user.info.basic`. Broadcasting separately requires a current LIVE server URL and stream key supplied by TikTok, plus account eligibility for streaming software. Signing in does not grant broadcasting access. The app does not create or close a TikTok LIVE room through Login Kit; it starts and stops the encoder output. Also end the room in TikTok’s app or LIVE dashboard.
 
@@ -54,7 +56,7 @@ npm run build
 npm run dist
 ~~~
 
-Outputs are under `release/Local LIVE Studio-win32-x64` and `dist/v1.5.0`. Source archives use an explicit file list and exclude accounts, projects, tokens, media caches, recordings and inspection evidence.
+Outputs are under `release/Local LIVE Studio-win32-x64` and `dist/v1.6.0`. Source archives use an explicit file list and exclude accounts, projects, tokens, media caches, recordings and inspection evidence.
 
 For a private RTMP integration check, install FFmpeg/ffprobe and run:
 
@@ -70,4 +72,4 @@ The studio uses a sandboxed renderer, context isolation, no renderer Node access
 
 Automated tests cover local data, account linking, scene validation, permissions, online sources, packaging and livestream lifecycle. Real encoder and desktop UI checks use private loopback receivers. Actual TikTok broadcast visibility and LIVE-room termination remain dependent on an eligible account and platform-side verification.
 
-See [1.5.0 release notes](docs/RELEASE-NOTES-1.5.0.md), [download instructions](docs/DOWNLOAD.md) and [component notices](THIRD-PARTY-NOTICES.md).
+See [1.6.0 release notes](docs/RELEASE-NOTES-1.6.0.md), [download instructions](docs/DOWNLOAD.md) and [component notices](THIRD-PARTY-NOTICES.md).
