@@ -1,0 +1,79 @@
+name: Publish verified Windows release
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Windows release build run
+        required: true
+        type: string
+      expected_sha:
+        description: Exact source commit built by that run
+        required: true
+        type: string
+      release_tag:
+        description: Existing draft release tag
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BUILD_RUN_ID: ${{ inputs.run_id }}
+      EXPECTED_SOURCE_SHA: ${{ inputs.expected_sha }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Verify the source run and draft release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:BUILD_RUN_ID -notmatch '^\d+$' -or $env:EXPECTED_SOURCE_SHA -notmatch '^[0-9a-f]{40}$' -or $env:RELEASE_TAG -notmatch '^v\d+\.\d+\.\d+$') { throw 'Invalid release inputs.' }
+          $workflowRun = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:BUILD_RUN_ID" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot read source run.' }
+          if ($workflowRun.status -ne 'completed' -or $workflowRun.conclusion -ne 'success' -or $workflowRun.head_sha -ne $env:EXPECTED_SOURCE_SHA -or $workflowRun.path -ne '.github/workflows/windows-release.yml') { throw 'The run is not the expected successful Windows build.' }
+          $releaseRecord = gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json isDraft,targetCommitish | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $releaseRecord.isDraft -or $releaseRecord.targetCommitish -ne $env:EXPECTED_SOURCE_SHA) { throw 'Only the matching existing draft release may be published.' }
+      - name: Download the verified build artifact
+        shell: pwsh
+        run: |
+          gh run download $env:BUILD_RUN_ID --repo $env:GITHUB_REPOSITORY --name local-live-studio-windows-release --dir release-files
+          if ($LASTEXITCODE -ne 0) { throw 'Build artifact download failed.' }
+      - name: Check archives and publish the draft
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $manifests = @(Get-ChildItem -LiteralPath release-files -Recurse -File -Filter release-manifest.json)
+          if ($manifests.Count -ne 1) { throw 'Expected one release manifest.' }
+          $assetRoot = $manifests[0].Directory.FullName
+          $assetManifest = Get-Content -LiteralPath $manifests[0].FullName -Raw | ConvertFrom-Json
+          $version = $env:RELEASE_TAG.Substring(1)
+          if ($assetManifest.version -ne $version -or $assetManifest.platform -ne 'win32-x64') { throw 'Release artifact version mismatch.' }
+          $expectedNames = @("Local-LIVE-Studio-$version-windows-x64.zip", "Local-LIVE-Studio-$version-source.zip")
+          $seenNames = @{}
+          foreach ($line in Get-Content -LiteralPath (Join-Path $assetRoot SHA256SUMS.txt)) {
+            if ($line -notmatch '^([a-f0-9]{64})  ([A-Za-z0-9.-]+\.zip)$') { throw 'Invalid checksum entry.' }
+            $expectedHash = $Matches[1]
+            $assetName = $Matches[2]
+            if ($assetName -notin $expectedNames -or $seenNames.ContainsKey($assetName)) { throw 'Unexpected or duplicate release asset.' }
+            $actualHash = (Get-FileHash -LiteralPath (Join-Path $assetRoot $assetName) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actualHash -ne $expectedHash) { throw 'Release archive checksum mismatch.' }
+            $seenNames[$assetName] = $true
+          }
+          if ($seenNames.Count -ne 2) { throw 'A required release archive is missing.' }
+          $releaseRecord = gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json isDraft,targetCommitish | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $releaseRecord.isDraft -or $releaseRecord.targetCommitish -ne $env:EXPECTED_SOURCE_SHA) { throw 'The draft release changed during verification.' }
+          $assets = @($expectedNames | ForEach-Object { Join-Path $assetRoot $_ }) + @(Join-Path $assetRoot SHA256SUMS.txt)
+          gh release upload $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --clobber @assets
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed; draft retained.' }
+          gh release edit $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json url,assets
