@@ -535,6 +535,7 @@ function renderNetworkState() {
   window.tiktokConnection?.setInternetEnabled(internetEnabled);
   window.liveOutput?.setInternetEnabled(internetEnabled);
   window.phoneStudio?.setInternetEnabled(internetEnabled);
+  window.studioCast?.setInternetEnabled(internetEnabled);
   $("#network-label").textContent = internetEnabled
     ? "Internet enabled"
     : "Offline mode";
@@ -1629,6 +1630,7 @@ setInterval(
 );
 
 window.addEventListener("beforeunload", () => {
+  window.studioCast?.close();
   window.phoneStudio?.close();
   bridge.stopPhones().catch(() => {});
   clearTimeout(saveTimer);
@@ -1669,6 +1671,15 @@ async function init() {
   $("#output-location").textContent = "Saved to " + initial.outputDir;
   renderRecordings();
   await loadProject(initial.project);
+  window.studioCast?.initialize(initial.studioRoute, {
+    getSettings: () => ({ width: project.settings.width, height: project.settings.height }),
+    createStream: async () => {
+      await ensureAudio(); const stream = canvas.captureStream(project.settings.fps);
+      audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track.clone()));
+      return stream;
+    },
+  });
+  window.studioCast?.setInternetEnabled(internetEnabled);
   window.phoneStudio?.initialize(initial.phones, {
     monitorStream: async () => {
       await ensureAudio();

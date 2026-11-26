@@ -20,6 +20,11 @@ for (const name of ['pointerdown', 'click', 'keydown']) {
 }
 
 const invoke = (name, ...args) => ipcRenderer.invoke(`studio:${name}`, ...args);
+function subscribeCast(channel, callback) {
+  if (typeof callback !== 'function') throw new TypeError('Expected a studio output handler.');
+  const listener = (_event, value) => callback(value); ipcRenderer.on(channel, listener);
+  return () => ipcRenderer.removeListener(channel, listener);
+}
 function subscribeClose(callback) {
   if (typeof callback !== 'function') throw new TypeError('Expected a close handler.');
   const listener = () => {
@@ -31,6 +36,17 @@ function subscribeClose(callback) {
 }
 const studio = Object.freeze({
   bootstrap: () => invoke('bootstrap'),
+  openCastOutput: settings => invoke('cast-open', { width: settings?.width, height: settings?.height }),
+  closeCastOutput: () => invoke('cast-close'),
+  setCastAudio: enabled => invoke('cast-audio', enabled),
+  openOfficialStudio: () => invoke('cast-open-official'),
+  chooseOfficialStudio: () => invoke('cast-pick-official'),
+  downloadOfficialStudio: () => invoke('cast-download'),
+  sendCastSignal: input => invoke('cast-signal', input),
+  onCastReady: callback => subscribeCast('studio:cast-ready', callback),
+  onCastSignal: callback => subscribeCast('studio:cast-signal', callback),
+  onCastStatus: callback => subscribeCast('studio:cast-status', callback),
+  onCastClosed: callback => subscribeCast('studio:cast-closed', callback),
   startPhones: () => invoke('phone-start'),
   stopPhones: () => invoke('phone-stop'),
   acceptPhone: id => invoke('phone-accept', id),

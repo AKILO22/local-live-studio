@@ -10,11 +10,13 @@
     <title>Local LIVE Studio</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="phone-studio.css" />
+    <link rel="stylesheet" href="cast-studio.css" />
     <script src="gifting.js" defer></script>
     <script src="tiktok.js" defer></script>
     <script src="live.js" defer></script>
     <script src="vendor/qrcode.js" defer></script>
     <script src="phones.js" defer></script>
+    <script src="cast.js" defer></script>
     <script src="renderer.js" defer></script>
   </head>
   <body>
@@ -224,8 +226,9 @@
         </section>
       </section>
       <aside class="right-sidebar">
+        <section class="panel cast-panel" aria-labelledby="cast-heading"><h2 id="cast-heading">TikTok broadcast</h2><p>Use your scenes with the official TikTok LIVE Studio. No manual stream key entry.</p><button id="cast-open" class="primary">Broadcast through TikTok LIVE Studio</button><p class="section-hint">Start, check and end LIVE in TikTok’s app.</p></section>
         <section class="panel live-panel" aria-labelledby="live-heading">
-          <div class="section-heading"><h2 id="live-heading">Livestream</h2><span id="live-state" class="state-badge" role="status">NOT LIVE</span></div>
+          <div class="section-heading"><h2 id="live-heading">Direct RTMP output</h2><span id="live-state" class="state-badge" role="status">NOT LIVE</span></div>
           <div class="live-destination"><span class="live-platform-icon" aria-hidden="true">◉</span><div><strong id="live-platform">TikTok LIVE</strong><small id="live-account">Connect your TikTok profile</small></div></div>
           <div class="session-clock" id="live-clock">00:00:00</div>
           <div class="record-details"><div><small>OUTPUT SENT</small><strong id="live-size">0 MB</strong></div><div><small>VIDEO BITRATE</small><strong id="bitrate-label">3 Mbps</strong></div></div>
@@ -752,6 +755,13 @@
         <div class="dialog-actions"><button type="button" id="live-help">TikTok connection guide</button><button class="primary" id="live-save-destination" type="submit">Save LIVE destination</button></div>
       </form>
       <div class="live-encoder-setup"><h3>Streaming encoder</h3><p id="live-encoder-status">Checking for FFmpeg…</p><button id="live-choose-encoder">Choose ffmpeg.exe</button><p class="section-hint">FFmpeg with libx264 is required and is detected automatically when installed. It runs separately from this app.</p></div>
+    </dialog>
+    <dialog id="cast-dialog" aria-labelledby="cast-title">
+      <div class="dialog-heading"><h2 id="cast-title">Broadcast through TikTok LIVE Studio</h2><button type="button" class="icon-button" data-close-dialog aria-label="Close TikTok broadcast setup">×</button></div>
+      <p>Your scenes stay in Local LIVE Studio. The official TikTok app signs in, creates the LIVE session and broadcasts. This route does not require you to enter a stream key.</p>
+      <p id="cast-install-status"></p><div class="cast-actions"><button id="cast-pick-official">Choose TikTok LIVE Studio</button><button id="cast-download">Get official app</button></div>
+      <ol class="cast-steps"><li><h3>Open your composed scene</h3><p>A separate window shows only your studio video. Keep it open and visible while broadcasting.</p><div class="cast-actions"><button id="cast-open-output" class="primary">Open studio output</button><button id="cast-close-output" disabled>Close output feed</button></div><p id="cast-output-state" role="status">Output closed</p></li><li><h3>Connect it in TikTok LIVE Studio</h3><p>Open TikTok, check the signed-in account, then add a <strong>Window Capture</strong> source. Select <strong>Local LIVE Studio — Broadcast Output</strong> and fit it to your TikTok canvas.</p><button id="cast-open-official">Open TikTok LIVE Studio</button></li><li><h3>Check sound, then go LIVE</h3><p>Use TikTok’s microphone or desktop audio sources. To include the studio’s mixed sound, enable playback below and capture that sound in TikTok. Choose one microphone path and use headphones to avoid echo.</p><label class="cast-audio-choice"><input id="cast-audio" type="checkbox" disabled> Play studio mixed audio through the output window</label><p>Set the title and category, check the picture and audio meters, then choose <strong>Go LIVE in TikTok LIVE Studio</strong>. End the broadcast there when finished.</p></li></ol>
+      <p class="cast-boundary">Local LIVE Studio does not read TikTok’s login session or control its LIVE status. Closing the output feed or this studio does not end a TikTok broadcast.</p><p id="cast-status" role="status" aria-live="polite"></p>
     </dialog>
     <dialog id="phone-dialog" aria-labelledby="phone-dialog-title">
       <div class="dialog-heading"><h2 id="phone-dialog-title">Connect your phone</h2><button type="button" class="icon-button" data-close-dialog aria-label="Close phone connections">×</button></div>

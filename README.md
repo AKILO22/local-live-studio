@@ -1,10 +1,10 @@
 # Local LIVE Studio
 
-An independent Windows livestream studio. Version 1.6.0 adds **Phone Camera**, **Phone Monitor**, and **Camera + Monitor**, using QR pairing and desktop device approval. **Start Live** and **End Live** remain the public streaming workflow, with scene composition, mixed audio, output status and RTMP/RTMPS broadcasting. Previous recordings remain on disk.
+An independent Windows livestream studio. Version 1.7.0 adds **Broadcast through TikTok LIVE Studio**: compose your scene here, open its output window, capture it in TikTok's official app, and start/end LIVE there. No manual stream key is needed for that route. See [the setup guide](docs/TIKTOK-STUDIO-ROUTE.md) and [the REA investigation](docs/TIKTOK-BROADCAST-ARCHITECTURE.md). This is an official-app handoff, not standalone keyless TikTok broadcasting.
 
 Open **Phone** in the header to connect a phone on the same Wi-Fi. Phone Camera adds its video to a scene. Phone Monitor displays the studio's composed video and audio without a TikTok stream key or public broadcast. A separate official cloudflared helper provides the secure phone page. See [Phone setup](docs/PHONE.md).
 
-TikTok profile linking uses Login Kit and `user.info.basic`. Broadcasting separately requires a current LIVE server URL and stream key supplied by TikTok, plus account eligibility for streaming software. Signing in does not grant broadcasting access. The app does not create or close a TikTok LIVE room through Login Kit; it starts and stops the encoder output. Also end the room in TikTok’s app or LIVE dashboard.
+TikTok profile linking uses Login Kit and `user.info.basic`. It is separate from the account signed in to the official TikTok app. **Direct RTMP output** uses Start Live / End Live and requires the receiving platform's server URL and key. Login Kit does not create or close TikTok LIVE rooms. The official-app route instead uses TikTok LIVE Studio's own signed-in session, without reading or copying it.
 
 ## Download and run
 
@@ -12,7 +12,11 @@ Download the Windows x64 ZIP, extract it completely, and open **Launch Local LIV
 
 Install a trusted **FFmpeg build with libx264**, using an installation source linked from [FFmpeg’s download page](https://ffmpeg.org/download.html). The app detects an existing installation, including Windows WinGet’s FFmpeg link. If necessary, select **Choose ffmpeg.exe** in LIVE setup. FFmpeg is already installed on the setup computer. It is not bundled in the ZIP.
 
-## Go live
+## Go live through TikTok LIVE Studio
+
+Choose **Broadcast through TikTok LIVE Studio**, open studio output, then open the official app. Add a Window Capture source in TikTok and select **Local LIVE Studio — Broadcast Output**. Configure sound, check the account and preview, and start/end LIVE in TikTok. No stream key or FFmpeg is required for this route. Closing output does not end the TikTok broadcast.
+
+## Direct RTMP output
 
 1. Prepare your scene using camera, display/window capture, text, colors, images, video, website overlays or local guest cards. Enable the microphone and check the audio meters.
 2. For TikTok, link your profile through **Account → Connect TikTok**. Start your configured Login Kit connection backend first.
@@ -56,7 +60,7 @@ npm run build
 npm run dist
 ~~~
 
-Outputs are under `release/Local LIVE Studio-win32-x64` and `dist/v1.6.0`. Source archives use an explicit file list and exclude accounts, projects, tokens, media caches, recordings and inspection evidence.
+Outputs are under `release/Local LIVE Studio-win32-x64` and `dist/v1.7.0`. Source archives use an explicit file list and exclude accounts, projects, tokens, media caches, recordings and private inspection artifacts.
 
 For a private RTMP integration check, install FFmpeg/ffprobe and run:
 
@@ -72,4 +76,4 @@ The studio uses a sandboxed renderer, context isolation, no renderer Node access
 
 Automated tests cover local data, account linking, scene validation, permissions, online sources, packaging and livestream lifecycle. Real encoder and desktop UI checks use private loopback receivers. Actual TikTok broadcast visibility and LIVE-room termination remain dependent on an eligible account and platform-side verification.
 
-See [1.6.0 release notes](docs/RELEASE-NOTES-1.6.0.md), [download instructions](docs/DOWNLOAD.md) and [component notices](THIRD-PARTY-NOTICES.md).
+See [1.7.0 release notes](docs/RELEASE-NOTES-1.7.0.md), [download instructions](docs/DOWNLOAD.md) and [component notices](THIRD-PARTY-NOTICES.md).

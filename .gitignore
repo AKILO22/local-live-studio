@@ -1,5 +1,8 @@
 node_modules/
 .cache/
+.dist/
+operations/
+artifacts/
 release/
 dist/
 evidence/
@@ -15,6 +18,7 @@ preferences.json
 tiktok-settings.json
 tiktok-link.bin
 phone-helper.json
+tiktok-studio.json
 *tiktok-vault*.json
 scripts/inspect-installed.py
 Launch Local LIVE Studio.cmd

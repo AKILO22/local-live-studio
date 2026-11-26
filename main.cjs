@@ -14,6 +14,7 @@ const { GiftStore } = require('./lib/gifts.cjs');
 const { TikTokConnection } = require('./lib/tiktok.cjs');
 const { LiveStream } = require('./lib/livestream.cjs');
 const { PhoneBridge } = require('./lib/phone.cjs');
+const { StudioRoute } = require('./lib/studio-route.cjs');
 
 const NAME = 'Local LIVE Studio';
 const ROOT = __dirname;
@@ -43,6 +44,7 @@ let tiktok;
 let tiktokSession;
 let livestream;
 let phones;
+let studioRoute;
 let studioSession;
 let preferencesFile;
 let preferenceWrites = Promise.resolve();
@@ -61,7 +63,17 @@ function registerBridge(outputDir) {
   ipcMain.on('studio:user-action', event => {
     try { access.noteAction(event); } catch { /* untrusted frame */ }
   });
-  handle('bootstrap', async () => ({ project: await projects.load(), recordings: await recorder.list(), outputDir, appVersion: app.getVersion(), network: { enabled: internetEnabled }, account: await accounts.status(), gifts: await gifts.snapshot(), tiktok: await tiktok.initialize(), live: livestream.snapshot(), phones: phones.snapshot() }));
+  handle('bootstrap', async () => ({ project: await projects.load(), recordings: await recorder.list(), outputDir, appVersion: app.getVersion(), network: { enabled: internetEnabled }, account: await accounts.status(), gifts: await gifts.snapshot(), tiktok: await tiktok.initialize(), live: livestream.snapshot(), phones: phones.snapshot(), studioRoute: studioRoute.snapshot() }));
+  handle('cast-open', settings => { access.requireAction(); return studioRoute.open(settings); });
+  handle('cast-close', () => studioRoute.close());
+  handle('cast-audio', enabled => { access.requireAction(); return studioRoute.setAudio(enabled); });
+  handle('cast-open-official', () => { access.requireAction(); return studioRoute.launch(); });
+  handle('cast-download', () => { access.requireAction(); return shell.openExternal('https://www.tiktok.com/studio/download'); });
+  handle('cast-pick-official', async () => {
+    access.requireAction();
+    const selected = await dialog.showOpenDialog(win, { title: 'Choose the official TikTok LIVE Studio executable', properties: ['openFile'], filters: [{ name: 'TikTok LIVE Studio executable', extensions: ['exe'] }] });
+    return selected.canceled || !selected.filePaths[0] ? studioRoute.snapshot() : studioRoute.choose(selected.filePaths[0]);
+  });
   handle('phone-start', () => { access.requireAction(); return phones.start(); });
   handle('phone-stop', () => phones.stop());
   handle('phone-accept', id => { access.requireAction(); return phones.accept(id); });
@@ -101,7 +113,7 @@ function registerBridge(outputDir) {
     access.requireAction();
     if (typeof enabled !== 'boolean') throw new TypeError('Choose whether Internet access is enabled.');
     const operation = preferenceWrites.then(async () => {
-      if (!enabled) { await livestream.stop('LIVE output stopped because Internet access was turned off.'); await phones.stop(); }
+      if (!enabled) { await livestream.stop('LIVE output stopped because Internet access was turned off.'); await phones.stop(); studioRoute.close(); }
       await atomicWrite(preferencesFile, JSON.stringify({ internetEnabled: enabled }));
       internetEnabled = enabled;
       if (!enabled) {
@@ -271,6 +283,7 @@ async function confirmClose() {
     await tiktok.close();
     await livestream.stop();
     await phones.stop();
+    studioRoute.close();
     await online.disconnect();
     await log.idle?.();
     allowClose = true;
@@ -314,6 +327,7 @@ function createWindow(studioSession) {
     tiktok.cancel();
     livestream.stop('LIVE output stopped because the studio window closed unexpectedly.').catch(() => {});
     phones.stop().catch(() => {});
+    studioRoute.close();
     recorder.cancelAll().catch(error => report('crash-recording-recovery', error));
   });
   win.webContents.on('preload-error', (_event, file, error) => report('preload-error', error));
@@ -386,6 +400,13 @@ if (!app.requestSingleInstanceLock()) {
       onStatus: state => { if (win && !win.isDestroyed()) win.webContents.send('studio:phone-status', state); },
       onSignal: event => { if (win && !win.isDestroyed()) win.webContents.send('studio:phone-signal', event); } });
     await phones.initialize();
+    const outputSession = session.fromPartition('studio-output');
+    installNetworkPolicy(outputSession, ROOT, () => {}, () => false);
+    outputSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+    outputSession.setPermissionCheckHandler(() => false);
+    studioRoute = new StudioRoute({ root: ROOT, dataDir: app.getPath('userData'), BrowserWindow, outputSession, mainURL: ENTRY_URL, getMainWindow: () => win, isEnabled: () => internetEnabled,
+      onStatus: state => { if (win && !win.isDestroyed()) win.webContents.send('studio:cast-status', state); } });
+    studioRoute.bind(ipcMain); await studioRoute.initialize();
     online = createOnlineServices({ BrowserWindow, session, dataDir: app.getPath('userData'), media, getWindow: () => win, isEnabled: () => internetEnabled, onBlocked: () => { blockedRequests += 1; } });
     registerBridge(outputDir);
     createWindow(studioSession);

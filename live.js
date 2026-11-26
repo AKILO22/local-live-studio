@@ -28,7 +28,7 @@
     $('#live-encoder-status').textContent = state.encoderReady ? 'FFmpeg detected. H.264 and AAC output are available.' : 'FFmpeg was not detected. Install an FFmpeg build with libx264, then choose ffmpeg.exe.';
     $('#live-choose-encoder').disabled = isActive || working;
     $('#live-save-destination').disabled = isActive || working;
-    $('#preview-mode').textContent = state.status === 'live' ? 'LIVE · Output transmitting' : state.status === 'connecting' ? 'Connecting LIVE output…' : 'Preview · Not live';
+    $('#preview-mode').textContent = state.status === 'live' ? 'LIVE · Direct output transmitting' : state.status === 'connecting' ? 'Connecting direct LIVE output…' : 'Preview · Direct stream off';
     context?.lockControls(isActive || working);
     updateClock();
   }
